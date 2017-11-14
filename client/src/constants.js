@@ -1,0 +1,1 @@
+export const MINIMUM_SECRET_LENGTH = 12;

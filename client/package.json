@@ -1,0 +1,48 @@
+{
+  "name": "client",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "bcrypt": "^1.0.3",
+    "dotenv": "^4.0.0",
+    "electron": "^1.7.9",
+    "electron-is-dev": "^0.3.0",
+    "node-forge": "^0.7.1",
+    "rimraf": "^2.6.2"
+  },
+  "devDependencies": {
+    "axios": "^0.17.0",
+    "devtron": "^1.4.0",
+    "electron-devtools-installer": "^2.2.1",
+    "electron-packager": "^9.1.0",
+    "flow-bin": "^0.57.3",
+    "hoist-non-react-statics": "^2.3.1",
+    "immutable": "facebook/immutable-js#npm",
+    "react": "^16.0.0",
+    "react-dom": "^16.0.0",
+    "react-redux": "^5.0.6",
+    "react-router-dom": "^4.2.2",
+    "react-scripts": "1.0.14",
+    "redux": "^3.7.2",
+    "redux-devtools-extension": "^2.13.2",
+    "redux-storage": "^4.1.2",
+    "redux-storage-decorator-filter": "^1.1.8",
+    "redux-storage-engine-localstorage": "^1.1.4",
+    "redux-storage-merger-immutablejs": "^1.0.5",
+    "redux-thunk": "^2.2.0",
+    "reselect": "^3.0.1",
+    "semantic-ui-css": "^2.2.12",
+    "semantic-ui-react": "^0.76.0"
+  },
+  "homepage": "./",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "react-scripts start",
+    "test": "react-scripts test --env=jsdom",
+    "electron": "electron .",
+    "build": "react-scripts build",
+    "build-electron": "electron-packager . --plataform=linux --out=./dist --overwrite=true --package-manager=yarn --ignore=src/renderer --ignore=flow-typed",
+    "flow": "flow",
+    "clean": "rimraf build dist"
+  }
+}
