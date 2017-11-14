@@ -3,11 +3,9 @@
 require('dotenv').load();
 
 const isDev = require('electron-is-dev');
-const {app, BrowserWindow, ipcMain} = require('electron');
-const {fork} = require('child_process');
+const {app, BrowserWindow} = require('electron');
 const path = require('path');
 const url = require('url');
-const bcrypt = require('bcrypt');
 
 /**
  * Installs extensions and debugging.
@@ -86,17 +84,4 @@ app.on('activate', function () {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
 
-ipcMain.on('hash', (event, password) => {
-  bcrypt.hash(password, 10, function (err, hash) {
-    event.sender.send('hash', hash);
-  });
-});
-
-ipcMain.on('generateKeyPair', (event, secret) => {
-  const child = fork(path.resolve(__dirname, './children/keyPairGenerator.js'));
-  child.on('message', (keyPair) => {
-    event.sender.send('generateKeyPair', keyPair);
-    child.kill();
-  });
-  child.send(secret);
-});
+require('./cryptography/ipc');

@@ -1,7 +1,6 @@
 // @flow
 
 import { List } from 'immutable';
-import forge from 'node-forge';
 import type { Dispatch, PromiseAction, ThunkAction } from '../../index';
 import type { State } from '../../../reducers/index';
 import server from '../../../lib/server';
@@ -66,8 +65,11 @@ export const login = (history: any): ThunkAction =>
       const password = getPassword(state);
       const secret = hasCustomSecret(state) ? getCustomSecret(state) : password;
 
+      // Generate the hashed secret
+      const hashedSecret = await ipcRenderer.sendAsync('hashSecret', secret);
+
       // Generate the hashed password
-      const hashedPassword = await ipcRenderer.sendAsync('hash', password);
+      const hashedPassword = await ipcRenderer.sendAsync('hashPassword', password);
 
       const response = await server.post('/login', {
         username,
@@ -80,9 +82,7 @@ export const login = (history: any): ThunkAction =>
         await dispatch(authenticate(responseJson.token));
 
         // Get the key pair
-        const pki = forge.pki;
-        const privateKey = pki.decryptPrivateKeyInfo(response.privateKey, secret);
-        const publicKey = pki.setRsaPublicKey(privateKey.n, privateKey.e);
+        const {privateKey, publicKey} = await ipcRenderer.sendAsync('getKeyPair', response.privateKey, hashedSecret);
         await dispatch(setPrivateKey(privateKey));
         await dispatch(setPublicKey(publicKey));
 

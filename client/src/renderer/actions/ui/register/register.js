@@ -92,14 +92,17 @@ export const register = (history: any): ThunkAction =>
       const password = getPassword(state);
       const secret = hasCustomSecret(state) ? getCustomSecret(state) : password;
 
+      // Generate the hashed secret
+      const hashedSecret = await ipcRenderer.sendAsync('hashSecret', secret);
+
       // Generate the hash password
-      const hashedPassword = await ipcRenderer.sendAsync('hash', password);
+      const hashedPassword = await ipcRenderer.sendAsync('hashPassword', password);
 
       // Generate key pair
-      const { publicPem, privatePem } = await ipcRenderer.sendAsync('generateKeyPair', secret);
+      const { publicPem, privatePem } = await ipcRenderer.sendAsync('generateKeyPair', hashedSecret);
 
       console.log('Public key:\n', publicPem);
-      console.log(`Encrypted private key with ${secret}:\n`, privatePem);
+      console.log(`Encrypted private key with ${hashedSecret}:\n`, privatePem);
       console.log('Hashed password: ', hashedPassword);
 
       try {
