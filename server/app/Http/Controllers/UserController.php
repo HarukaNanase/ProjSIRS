@@ -16,13 +16,13 @@ class UserController extends Controller
             return response()->json(['message' => "Password is incorrect"], 401);
         }
 
-        return response()->json(['message' => "Login successful for " . $user->username, 'api_token' => $user->generateToken(), 'private_key' => $user->private_key], 200);
+        return response()->json(['message' => "Login successful for " . $user->username, 'api_token' => $user->generateToken(config('API_TOKEN_LIFETIME')), 'private_key' => $user->private_key], 200);
     }
 
     public function renew(Request $request) {
         $user = Auth::user();
 
-        return response()->json(['message' => "API token renewed.", 'api_token' => $user->generateToken()], 200);
+        return response()->json(['message' => "API token renewed.", 'api_token' => $user->generateToken(config('API_TOKEN_RENEW_LIFETIME'))], 200);
     }
 
     public function register(Request $request) {
