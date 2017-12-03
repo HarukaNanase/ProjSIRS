@@ -10,8 +10,12 @@ $app->post('login', 'UserController@login');
 // Registers a new user
 $app->post('register', 'UserController@register');
 
-// Logs the user out
+// Requires authentication
 $app->group(['middleware' => 'auth'], function ($app) {
+    // Renews session
+    $app->get('renew', 'UserController@renew');
+
+    // Logs the user out
     $app->get('logout', 'UserController@logout');
 });
 
@@ -20,6 +24,7 @@ $app->group(['middleware' => 'auth'], function ($app) {
  File-related routes
 ------------------ */
 
+// Requires authentication
 $app->group(['middleware' => 'auth'], function ($app) {
   // Uploads a new file
   $app->put('file', 'FileController@upload');
@@ -42,3 +47,10 @@ $app->group(['middleware' => 'auth'], function ($app) {
   // Revokes share of a file with a specific ID with someone else
   $app->post('file/{file_id}/revoke', 'FileController@revoke');
 });
+
+/* -------------------
+ Miscellaneous routes
+------------------- */
+
+// Brews coffee
+$app->get('brew', 'TeapotController@brew');

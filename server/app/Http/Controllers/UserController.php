@@ -19,6 +19,12 @@ class UserController extends Controller
         return response()->json(['message' => "Login successful for " . $user->username, 'api_token' => $user->generateToken(), 'private_key' => $user->private_key], 200);
     }
 
+    public function renew(Request $request) {
+        $user = Auth::user();
+
+        return response()->json(['message' => "API token renewed.", 'api_token' => $user->generateToken()], 200);
+    }
+
     public function register(Request $request) {
         $request->validate([
             'username' => 'required|min:6|unique:user',
@@ -35,6 +41,8 @@ class UserController extends Controller
             'public_key' => $request->get('public_key'),
             'private_key' => $request->get('private_key'),
         ]);
+
+        return response()->json(['message' => "Account successfully created " . $user->username], 201);
     }
 
     public function logout(Request $request) {
