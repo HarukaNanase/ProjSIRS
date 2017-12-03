@@ -17,9 +17,11 @@ class CreateUserTable extends Migration
             $table->increments('id');
             $table->string('username')->unique();
             $table->string('email')->nullable();
-            $table->string('password_hash');
+            $table->string('password');
             $table->string('public_key');
             $table->string('private_key');
+            $table->string('api_token')->nullable();
+            $table->timestamp('api_token_expiration');
         });
     }
 

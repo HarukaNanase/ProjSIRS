@@ -15,8 +15,8 @@ class CreateAccessTable extends Migration
     {
         Schema::create('access', function (Blueprint $table) {
             $table->primary(['user', 'file']);
-            $table->string('user')->references('id')->on('user');
-            $table->string('file')->references('id')->on('file');
+            $table->string('user_id')->references('id')->on('user');
+            $table->string('file_id')->references('id')->on('file');
             $table->string('key');
         });
     }
