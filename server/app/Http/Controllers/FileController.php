@@ -99,8 +99,8 @@ class FileController extends Controller
                     'name' => $file->name,
                     'directory' => empty($file->path),
                     'size' => 0,
-                    'created' => $file->created_at->getTimestamp(),
-                    'modified' => $file->updated_at->getTimestamp(),
+                    'created' => Carbon::parse($file->created_at)->getTimestamp(),
+                    'modified' => Carbon::parse($file->updated_at)->getTimestamp(),
                     'owner' => $owner,
                     'shared' => $shared,
             ];
