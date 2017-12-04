@@ -81,6 +81,10 @@ class FileController extends Controller
     public function download(Request $request, string $file_id) {
         $file = File::where('id', $file_id)->first();
 
+        if (empty($file)) {
+            return response()->json(['message' => "File not found."], 404);
+        }
+
         if (empty($file->path)) {
             $files = Access::where('user_id', $request->user()->id)->join('files', 'accesses.file_id', '=', 'files.id')->where('parent', $file_id)->get();
 
@@ -114,6 +118,10 @@ class FileController extends Controller
         return response()->json(['message' => "Not yet implemented due to bad time scheduling"], 501);
 
         $file = File::where('id', $file_id)->first();
+
+        if (empty($file)) {
+            return response()->json(['message' => "File not found."], 404);
+        }
     }
 
     public function rename(Request $request, string $file_id) {
@@ -122,6 +130,11 @@ class FileController extends Controller
         ]);
 
         $file = File::where('id', $file_id)->first();
+
+        if (empty($file)) {
+            return response()->json(['message' => "File not found."], 404);
+        }
+
         $file->name = $request->get('name');
         $file->save();
 
@@ -132,17 +145,56 @@ class FileController extends Controller
         return response()->json(['message' => "Not yet implemented due to bad time scheduling"], 501);
 
         $file = File::where('id', $file_id)->first();
+
+        if (empty($file)) {
+            return response()->json(['message' => "File not found."], 404);
+        }
     }
 
     public function share(Request $request, string $file_id) {
-        return response()->json(['message' => "Not yet implemented due to bad time scheduling"], 501);
+        $this->validate($request, [
+            'username' => 'required|exists:users',
+            'key' => 'required',
+        ]);
 
         $file = File::where('id', $file_id)->first();
+
+        if (empty($file)) {
+            return response()->json(['message' => "File not found."], 404);
+        }
+
+        $user = User::where('username', $username)->first();
+
+        $access = Access::create([
+            'user_id' => $user->id,
+            'file_id' => $file->id,
+            'key' => $request->get('key'),
+        ]);
+
+        return response()->json(['message' => "Access granted."], 200);
     }
 
     public function revoke(Request $request, string $file_id) {
-        return response()->json(['message' => "Not yet implemented due to bad time scheduling"], 501);
+        $this->validate($request, [
+            'username' => 'required|exists:users'
+        ]);
 
         $file = File::where('id', $file_id)->first();
+
+        if (empty($file)) {
+            return response()->json(['message' => "File not found."], 404);
+        }
+
+        $user = User::where('username', $username)->first();
+
+        $access = Access::where('file_id', $file->id)->andWhere('user_id', $user->id)->first();
+
+        if (empty($access)) {
+            return response()->json(['message' => "Share to be revoked not found."], 404);
+        }
+
+        $access->delete();
+
+        return response()->json(['message' => "Access revoked."], 200);
     }
 }

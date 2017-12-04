@@ -12,7 +12,7 @@ class UserController extends Controller
     public function login(Request $request) {
         $this->validate($request, [
             'username' => 'required|exists:users',
-            'password' => 'required'
+            'password' => 'required',
         ]);
 
         $user = User::where('username', $request->get('username'))->first();
@@ -36,7 +36,7 @@ class UserController extends Controller
             'password' => 'required|min:6',
             'email' => 'sometimes|email',
             'public_key' => 'required',
-            'private_key' => 'required'
+            'private_key' => 'required',
         ]);
 
         $user = User::create([
@@ -54,5 +54,15 @@ class UserController extends Controller
         $request->user()->invalidateToken();
 
         return response()->json(['message' => "You have been logged out."], 200);
+    }
+
+    public function key(Request $request, string $username) {
+        $user = User::where('username', $username)->first();
+
+        if (empty(user)) {
+            return response()->json(['message' => "User not found."], 404);
+        }
+
+        return response()->json(['message' => "User found.", 'public_key' => $user->public_key], 200);
     }
 }

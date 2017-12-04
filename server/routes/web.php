@@ -17,6 +17,9 @@ $router->group(['middleware' => 'auth'], function ($router) {
 
     // Logs the user out
     $router->get('logout', 'UserController@logout');
+
+    // Gets a user's public key
+    $router->get('key/{username}', 'UserController@key');
 });
 
 
