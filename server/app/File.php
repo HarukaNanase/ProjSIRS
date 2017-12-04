@@ -39,6 +39,23 @@ class File extends Model
     ];
 
     /**
+     * Recursively deletes this file/folder
+     */
+    public function recursivelyDelete() {
+        if (!empty($this->path)) {
+            unlink($this->path);
+        }
+
+        $files = File::where('parent', $this->id)->get();
+
+        foreach ($files as $file) {
+            $file->recursivelyDelete();
+        }
+
+        $this->delete();
+    }
+
+    /**
      * Define a one-to-many relationship
      */
     public function user(){

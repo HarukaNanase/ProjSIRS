@@ -15,8 +15,8 @@ class CreateAccessesTable extends Migration
     {
         Schema::create('accesses', function (Blueprint $table) {
             $table->primary(['user_id', 'file_id']);
-            $table->integer('user_id')->references('id')->on('user');
-            $table->integer('file_id')->references('id')->on('file');
+            $table->integer('user_id')->references('id')->on('user')->onDelete('cascade');
+            $table->integer('file_id')->references('id')->on('file')->onDelete('cascade');
             $table->string('key');
         });
     }

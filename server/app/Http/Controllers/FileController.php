@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 use App\User;
 use App\File;
@@ -19,13 +20,10 @@ class FileController extends Controller
             'name' => 'required',
             'key' => 'required',
             'parent' => 'sometimes|exists:files,id',
+            'file' => 'sometimes|file',
         ]);
 
         if ($request->hasFile('file')) {
-            if (!$request->file('file')->isValid()) {
-                return response()->json(['message' => "File is invalid or corrupted."], 400);
-            }
-
             $path = pathinfo(tempnam($this->storageLocation, 'sirs'));
             $request->file('file')->move($path['dirname'], $path['basename']);
 
@@ -68,8 +66,8 @@ class FileController extends Controller
                 'name' => $file->name,
                 'directory' => empty($file->path),
                 'size' => 0,
-                'created' => $file->created_at,
-                'modified' => $file->updated_at,
+                'created' => Carbon::parse($file->created_at)->getTimestamp(),
+                'modified' => Carbon::parse($file->updated_at)->getTimestamp(),
                 'owner' => $owner,
                 'shared' => $shared,
         ];
@@ -101,8 +99,8 @@ class FileController extends Controller
                     'name' => $file->name,
                     'directory' => empty($file->path),
                     'size' => 0,
-                    'created' => $file->created_at,
-                    'modified' => $file->updated_at,
+                    'created' => $file->created_at->getTimestamp(),
+                    'modified' => $file->updated_at->getTimestamp(),
                     'owner' => $owner,
                     'shared' => $shared,
             ];
@@ -110,18 +108,27 @@ class FileController extends Controller
 
             return response()->json(['message' => "Retrieved directory.", 'files' => $formatted_files], 200);
         } else {
-            return response()->json(['message' => "Not yet implemented due to bad time scheduling"], 501);
+            return response()->download($file->path);
         }
     }
 
     public function update(Request $request, string $file_id) {
-        return response()->json(['message' => "Not yet implemented due to bad time scheduling"], 501);
+        $this->validate($request, [
+            'file' => 'required|file',
+        ]);
 
         $file = File::where('id', $file_id)->first();
 
         if (empty($file)) {
             return response()->json(['message' => "File not found."], 404);
         }
+
+        $path = pathinfo($file->path);
+        $request->file('file')->move($path['dirname'], $path['basename']);
+        $file->touch();
+        $file->save();
+
+        return response()->json(['message' => "File updated."], 200);
     }
 
     public function rename(Request $request, string $file_id) {
@@ -142,13 +149,14 @@ class FileController extends Controller
     }
 
     public function delete(Request $request, string $file_id) {
-        return response()->json(['message' => "Not yet implemented due to bad time scheduling"], 501);
-
         $file = File::where('id', $file_id)->first();
 
         if (empty($file)) {
             return response()->json(['message' => "File not found."], 404);
         }
+
+        $file->recursivelyDelete();
+        return response()->json(['message' => "File deleted successfully."], 200);
     }
 
     public function share(Request $request, string $file_id) {
