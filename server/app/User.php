@@ -9,10 +9,16 @@ use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Carbon;
 
 class User extends Model implements AuthenticatableContract, AuthorizableContract
 {
     use Authenticatable, Authorizable;
+
+    /**
+     * Disables timestamps
+     */
+    public $timestamps = false;
 
     /**
      * The attributes that are mass assignable.
@@ -20,7 +26,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @var array
      */
     protected $fillable = [
-        'username', 'email', 'password', 'public_key', 'private_key',
+        'username', 'email', 'password', 'public_key', 'private_key', 'api_token', 'api_token_expiration',
     ];
 
     /**
@@ -29,7 +35,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @var array
      */
     protected $guarded = [
-        'id', 'api_token', 'api_token_expiration',
+        'id',
     ];
 
     /**
@@ -57,7 +63,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      */
     public function generateToken(int $expirationSeconds) {
         $this->api_token = Hash::make($this->id . Carbon::now()->toDateTimeString() . bin2hex(random_bytes(8)));
-        $this->api_token_expiration = Carbon::now()->addSeconds(expirationSeconds);
+        $this->api_token_expiration = Carbon::now()->addSeconds($expirationSeconds);
         $this->save();
 
         return $this->api_token;
@@ -75,7 +81,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
             }
         }
 
-        return Carbon::createFromTimeStampUTC($user->api_token_expiration)->gt(Carbon::now());
+        return Carbon::parse($this->api_token_expiration)->gt(Carbon::now());
     }
 
     /**

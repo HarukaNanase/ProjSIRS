@@ -7,12 +7,17 @@ use Illuminate\Database\Eloquent\Model;
 class Access extends Model
 {
     /**
+     * Disables timestamps
+     */
+    public $timestamps = false;
+
+    /**
     * The attributes that are mass assignable.
     *
     * @var array
     */
     protected $fillable = [
-        'user_id', 'key',
+        'user_id', 'key', 'file_id',
     ];
 
     /**
@@ -21,7 +26,6 @@ class Access extends Model
     * @var array
     */
     protected $guarded = [
-        'file_id',
     ];
 
     /**
@@ -30,7 +34,6 @@ class Access extends Model
     * @var array
     */
     protected $hidden = [
-        'password_hash',
     ];
 
     /**

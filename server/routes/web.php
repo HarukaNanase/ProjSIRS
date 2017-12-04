@@ -5,18 +5,18 @@
 ------------------ */
 
 // Logs in
-$app->post('login', 'UserController@login');
+$router->post('login', 'UserController@login');
 
 // Registers a new user
-$app->post('register', 'UserController@register');
+$router->post('register', 'UserController@register');
 
 // Requires authentication
-$app->group(['middleware' => 'auth'], function ($app) {
+$router->group(['middleware' => 'auth'], function ($router) {
     // Renews session
-    $app->get('renew', 'UserController@renew');
+    $router->get('renew', 'UserController@renew');
 
     // Logs the user out
-    $app->get('logout', 'UserController@logout');
+    $router->get('logout', 'UserController@logout');
 });
 
 
@@ -25,27 +25,30 @@ $app->group(['middleware' => 'auth'], function ($app) {
 ------------------ */
 
 // Requires authentication
-$app->group(['middleware' => 'auth'], function ($app) {
+$router->group(['middleware' => 'auth'], function ($router) {
   // Uploads a new file
-  $app->put('file', 'FileController@upload');
+  $router->post('file', 'FileController@upload');
+
+  // Gets the root directory
+  $router->get('file', 'FileController@root');
 
   // Downloads a file with a specific ID
-  $app->get('file/{file_id}', 'FileController@download');
+  $router->get('file/{file_id}', 'FileController@download');
 
   // Updates a file with a specific ID
-  $app->put('file/{file_id}', 'FileController@update');
+  $router->put('file/{file_id}', 'FileController@update');
 
   // Renames a file with a specific ID
-  $app->post('file/{file_id}', 'FileController@rename');
+  $router->post('file/{file_id}', 'FileController@rename');
 
   // Deletes a file with a specific ID
-  $app->delete('file/{file_id}', 'FileController@delete');
+  $router->delete('file/{file_id}', 'FileController@delete');
 
   // Shares a file with a specific ID with someone else
-  $app->post('file/{file_id}/share', 'FileController@share');
+  $router->post('file/{file_id}/share', 'FileController@share');
 
   // Revokes share of a file with a specific ID with someone else
-  $app->post('file/{file_id}/revoke', 'FileController@revoke');
+  $router->post('file/{file_id}/revoke', 'FileController@revoke');
 });
 
 /* -------------------
@@ -53,4 +56,5 @@ $app->group(['middleware' => 'auth'], function ($app) {
 ------------------- */
 
 // Brews coffee
-$app->get('brew', 'TeapotController@brew');
+$router->get('brew', 'TeapotController@brew');
+$router->post('brew', 'TeapotController@brew');

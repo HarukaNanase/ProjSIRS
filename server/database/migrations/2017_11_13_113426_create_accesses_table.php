@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateAccessTable extends Migration
+class CreateAccessesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,10 +13,10 @@ class CreateAccessTable extends Migration
      */
     public function up()
     {
-        Schema::create('access', function (Blueprint $table) {
-            $table->primary(['user', 'file']);
-            $table->string('user_id')->references('id')->on('user');
-            $table->string('file_id')->references('id')->on('file');
+        Schema::create('accesses', function (Blueprint $table) {
+            $table->primary(['user_id', 'file_id']);
+            $table->integer('user_id')->references('id')->on('user');
+            $table->integer('file_id')->references('id')->on('file');
             $table->string('key');
         });
     }
@@ -28,6 +28,6 @@ class CreateAccessTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('access');
+        Schema::dropIfExists('accesses');
     }
 }

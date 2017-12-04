@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+
+use App\User;
+
 class UserController extends Controller
 {
     public function login(Request $request) {
-        $request->validate([
-            'username' => 'required|exists:user',
+        $this->validate($request, [
+            'username' => 'required|exists:users',
             'password' => 'required'
         ]);
 
@@ -16,20 +21,20 @@ class UserController extends Controller
             return response()->json(['message' => "Password is incorrect"], 401);
         }
 
-        return response()->json(['message' => "Login successful for " . $user->username, 'api_token' => $user->generateToken(config('API_TOKEN_LIFETIME')), 'private_key' => $user->private_key], 200);
+        return response()->json(['message' => "Login successful for " . $user->username, 'api_token' => $user->generateToken(env('API_TOKEN_LIFETIME')), 'private_key' => $user->private_key], 200);
     }
 
     public function renew(Request $request) {
-        $user = Auth::user();
+        $user = $request->user();
 
-        return response()->json(['message' => "API token renewed.", 'api_token' => $user->generateToken(config('API_TOKEN_RENEW_LIFETIME'))], 200);
+        return response()->json(['message' => "API token renewed.", 'api_token' => $user->generateToken(env('API_TOKEN_RENEW_LIFETIME'))], 200);
     }
 
     public function register(Request $request) {
-        $request->validate([
-            'username' => 'required|min:6|unique:user',
+        $this->validate($request, [
+            'username' => 'required|min:3|unique:users',
             'password' => 'required|min:6',
-            'email' => 'sometimes|email'
+            'email' => 'sometimes|email',
             'public_key' => 'required',
             'private_key' => 'required'
         ]);
@@ -42,11 +47,11 @@ class UserController extends Controller
             'private_key' => $request->get('private_key'),
         ]);
 
-        return response()->json(['message' => "Account successfully created " . $user->username], 201);
+        return response()->json(['message' => "Account " .  $user->username . " successfully created "], 201);
     }
 
     public function logout(Request $request) {
-        Auth::user()->invalidateToken();
+        $request->user()->invalidateToken();
 
         return response()->json(['message' => "You have been logged out."], 200);
     }

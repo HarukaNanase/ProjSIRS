@@ -2,9 +2,10 @@
 
 namespace App\Providers;
 
-use App\User;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+
+use App\User;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -33,7 +34,7 @@ class AuthServiceProvider extends ServiceProvider
                     return null;
                 }
 
-                $user = User::where('api_token', $token)->andWhere()->first();
+                $user = User::where('api_token', $token)->first();
 
                 if (empty($user) || !$user->checkToken()) {
                     return null;

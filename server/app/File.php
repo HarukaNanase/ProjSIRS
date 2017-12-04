@@ -7,12 +7,17 @@ use Illuminate\Database\Eloquent\Model;
 class File extends Model
 {
     /**
+     * Disables timestamps
+     */
+    public $timestamps = true;
+
+    /**
     * The attributes that are mass assignable.
     *
     * @var array
     */
     protected $fillable = [
-        'name', 'parent',
+        'name', 'parent', 'owner', 'path',
     ];
 
     /**
@@ -21,7 +26,7 @@ class File extends Model
     * @var array
     */
     protected $guarded = [
-        'id', 'owner', 'path',
+        'id',
     ];
 
     /**

@@ -7,6 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class Log extends Model
 {
     /**
+     * Disables timestamps
+     */
+    public $timestamps = false;
+    
+    /**
     * The attributes that are mass assignable.
     *
     * @var array
