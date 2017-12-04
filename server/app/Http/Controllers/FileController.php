@@ -79,15 +79,53 @@ class FileController extends Controller
     }
 
     public function download(Request $request, string $file_id) {
-        return response()->json(['message' => "Not yet implemented due to bad time scheduling"], 501);
-
         $file = File::where('id', $file_id)->first();
+
+        if (empty($file->path)) {
+            $files = Access::where('user_id', $request->user()->id)->join('files', 'accesses.file_id', '=', 'files.id')->where('parent', $file_id)->get();
+
+            $formatted_files = [];
+            foreach ($files as $file) {
+                $owner = User::where('id', $file->owner)->first()->username;
+                $shared = Access::where('file_id', $file->id)->join('users', 'accesses.user_id', '=', 'users.id')->pluck('username');
+
+                $shared->forget($shared->search($owner));
+
+                $formatted_files[] = [
+                    'id' => $file->id,
+                    'key' => $file->key,
+                    'name' => $file->name,
+                    'directory' => empty($file->path),
+                    'size' => 0,
+                    'created' => $file->created_at,
+                    'modified' => $file->updated_at,
+                    'owner' => $owner,
+                    'shared' => $shared,
+            ];
+            }
+
+            return response()->json(['message' => "Retrieved directory.", 'files' => $formatted_files], 200);
+        } else {
+            return response()->json(['message' => "Not yet implemented due to bad time scheduling"], 501);
+        }
     }
 
     public function update(Request $request, string $file_id) {
         return response()->json(['message' => "Not yet implemented due to bad time scheduling"], 501);
 
         $file = File::where('id', $file_id)->first();
+    }
+
+    public function rename(Request $request, string $file_id) {
+        $this->validate($request, [
+            'name' => 'required',
+        ]);
+
+        $file = File::where('id', $file_id)->first();
+        $file->name = $request->get('name');
+        $file->save();
+
+        return response()->json(['message' => "Rename successful."], 200);
     }
 
     public function delete(Request $request, string $file_id) {
