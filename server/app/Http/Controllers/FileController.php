@@ -18,7 +18,7 @@ class FileController extends Controller
     public function upload(Request $request) {
         $this->validate($request, [
             'name' => 'required',
-            'key' => 'required',
+            'keys' => 'required|array',
             'parent' => 'sometimes|exists:files,id',
             'file' => 'sometimes|file',
         ]);
@@ -36,7 +36,19 @@ class FileController extends Controller
 
         if ($request->user()->cannot('file-create', $file)) {
             return response()->json(['message' => "Forbidden."], 403);
-        } elseif ($request->hasFile('file')) {
+        }
+
+        if (!empty($request->get('parent'))) {
+            if (Access::where('file_id', $file->parent)->join('users', 'accesses.user_id', '=', 'users.id')->whereNotIn('username', array_keys($request->get('keys')))->count()) {
+                return response()->json(['message' => "Users missing in keys list."], 400);
+            }
+        } else {
+            if (!in_array($request->user()->username, array_keys($request->get('keys')))) {
+                return response()->json(['message' => "Users missing in keys list."], 400);
+            }
+        }
+
+        if ($request->hasFile('file')) {
             $path = pathinfo(tempnam($this->storageLocation, 'sirs'));
             $request->file('file')->move($path['dirname'], $path['basename']);
             $file->path = $path['dirname'] . '/' . $path['basename'];
@@ -44,11 +56,23 @@ class FileController extends Controller
 
         $file->save();
 
-        $access = Access::create([
-            'user_id' => $request->user()->id,
-            'file_id' => $file->id,
-            'key' => $request->get('key'),
-        ]);
+        if (!empty($request->get('parent'))) {
+            $userAccesses = Access::where('file_id', $file->parent)->join('users', 'accesses.user_id', '=', 'users.id')->get();
+
+            foreach ($userAccesses as $userAccess) {
+                $access = Access::create([
+                    'user_id' => $userAccess->user_id,
+                    'file_id' => $file->id,
+                    'key' => $request->get('keys')[$userAccess->username],
+                ]);
+            }
+        } else {
+            $access = Access::create([
+                'user_id' => $request->user()->id,
+                'file_id' => $file->id,
+                'key' => $request->get('keys')[$request->user()->username],
+            ]);
+        }
 
         return response()->json(['message' => "Successfully created.", 'id' => $file->id], 201);
     }
