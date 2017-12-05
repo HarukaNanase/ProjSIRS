@@ -23,23 +23,26 @@ class FileController extends Controller
             'file' => 'sometimes|file',
         ]);
 
-        if ($request->hasFile('file')) {
+        $file = File::newModelInstance([
+            'owner' => $request->user()->id,
+            'name' => $request->get('name'),
+            'parent' => $request->get('parent'),
+        ]);
+
+        if (!empty($request->get('parent'))) {
+            $parent = File::where('id', $request->get('parent'))->first();
+            $file->owner = $parent->owner;
+        }
+
+        if ($request->user()->cannot('file-create', $file)) {
+            return response()->json(['message' => "Forbidden."], 403);
+        } elseif ($request->hasFile('file')) {
             $path = pathinfo(tempnam($this->storageLocation, 'sirs'));
             $request->file('file')->move($path['dirname'], $path['basename']);
-
-            $file = File::create([
-                'owner' => $request->user()->id,
-                'path' => $path['dirname'] . '/' . $path['basename'],
-                'name' => $request->get('name'),
-                'parent' => $request->get('parent'),
-            ]);
-        } else {
-            $file = File::create([
-                'owner' => $request->user()->id,
-                'name' => $request->get('name'),
-                'parent' => $request->get('parent'),
-            ]);
+            $file->path = $path['dirname'] . '/' . $path['basename'];
         }
+
+        $file->save();
 
         $access = Access::create([
             'user_id' => $request->user()->id,
@@ -70,7 +73,7 @@ class FileController extends Controller
                 'modified' => Carbon::parse($file->updated_at)->getTimestamp(),
                 'owner' => $owner,
                 'shared' => $shared,
-        ];
+            ];
         }
 
         return response()->json(['message' => "Retrieved root directory.", 'files' => $formatted_files], 200);
@@ -81,6 +84,10 @@ class FileController extends Controller
 
         if (empty($file)) {
             return response()->json(['message' => "File not found."], 404);
+        }
+
+        if ($request->user()->cannot('file-read-modify', $file)) {
+            return response()->json(['message' => "Forbidden."], 403);
         }
 
         if (empty($file->path)) {
@@ -103,7 +110,7 @@ class FileController extends Controller
                     'modified' => Carbon::parse($file->updated_at)->getTimestamp(),
                     'owner' => $owner,
                     'shared' => $shared,
-            ];
+                ];
             }
 
             return response()->json(['message' => "Retrieved directory.", 'files' => $formatted_files], 200);
@@ -115,6 +122,7 @@ class FileController extends Controller
     public function update(Request $request, string $file_id) {
         $this->validate($request, [
             'file' => 'required|file',
+            'keys' => 'sometimes|array'
         ]);
 
         $file = File::where('id', $file_id)->first();
@@ -123,9 +131,30 @@ class FileController extends Controller
             return response()->json(['message' => "File not found."], 404);
         }
 
+        if ($request->user()->cannot('file-read-modify', $file)) {
+            return response()->json(['message' => "Forbidden."], 403);
+        }
+
+        if (!empty($request->get('keys'))) {
+            if (Access::where('file_id', $file->id)->join('users', 'accesses.user_id', '=', 'users.id')->whereNotIn('username', array_keys($request->get('keys')))->count()) {
+                return response()->json(['message' => "Users missing in keys list."], 400);
+            }
+
+            $userAccesses = Access::where('file_id', $file->id)->join('users', 'accesses.user_id', '=', 'users.id')->get();
+
+            foreach ($userAccesses as $userAccess) {
+                $access = Access::where('file_id', $file->id)->where('user_id', $userAccess->user_id)->first();
+
+                $access->key = $request->get('keys')[$userAccess->username];
+                $access->save();
+            }
+
+            $file->needs_reciphering = false;
+        }
+
         $path = pathinfo($file->path);
         $request->file('file')->move($path['dirname'], $path['basename']);
-        $file->touch();
+
         $file->save();
 
         return response()->json(['message' => "File updated."], 200);
@@ -142,6 +171,10 @@ class FileController extends Controller
             return response()->json(['message' => "File not found."], 404);
         }
 
+        if ($request->user()->cannot('file-read-modify', $file)) {
+            return response()->json(['message' => "Forbidden."], 403);
+        }
+
         $file->name = $request->get('name');
         $file->save();
 
@@ -153,6 +186,10 @@ class FileController extends Controller
 
         if (empty($file)) {
             return response()->json(['message' => "File not found."], 404);
+        }
+
+        if ($request->user()->cannot('file-read-modify', $file)) {
+            return response()->json(['message' => "Forbidden."], 403);
         }
 
         $file->recursivelyDelete();
@@ -171,7 +208,11 @@ class FileController extends Controller
             return response()->json(['message' => "File not found."], 404);
         }
 
-        $user = User::where('username', $username)->first();
+        if ($request->user()->cannot('file-share', $file)) {
+            return response()->json(['message' => "Forbidden."], 403);
+        }
+
+        $user = User::where('username', $request->get('username'))->first();
 
         $access = Access::create([
             'user_id' => $user->id,
@@ -193,15 +234,22 @@ class FileController extends Controller
             return response()->json(['message' => "File not found."], 404);
         }
 
-        $user = User::where('username', $username)->first();
+        if ($request->user()->cannot('file-share', $file)) {
+            return response()->json(['message' => "Forbidden."], 403);
+        }
 
-        $access = Access::where('file_id', $file->id)->andWhere('user_id', $user->id)->first();
+        $user = User::where('username', $request->get('username'))->first();
+
+        $access = Access::where('file_id', $file->id)->where('user_id', $user->id)->first();
 
         if (empty($access)) {
             return response()->json(['message' => "Share to be revoked not found."], 404);
         }
 
         $access->delete();
+
+        $file->needs_reciphering = true;
+        $file->save();
 
         return response()->json(['message' => "Access revoked."], 200);
     }

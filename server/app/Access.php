@@ -26,6 +26,7 @@ class Access extends Model
     * @var array
     */
     protected $guarded = [
+        'id',
     ];
 
     /**

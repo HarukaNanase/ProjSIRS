@@ -56,13 +56,18 @@ class UserController extends Controller
         return response()->json(['message' => "You have been logged out."], 200);
     }
 
-    public function key(Request $request, string $username) {
-        $user = User::where('username', $username)->first();
+    public function keys(Request $request) {
+        $this->validate($request, [
+            'usernames' => 'required|array',
+        ]);
 
-        if (empty(user)) {
-            return response()->json(['message' => "User not found."], 404);
+        $userkeys = User::whereIn('username', $request->get('usernames'))->select('username', 'public_key')->get();
+
+        $public_keys = [];
+        foreach ($userkeys as $userkey) {
+            $public_keys[$userkey->username] = $userkey->public_key;
         }
 
-        return response()->json(['message' => "User found.", 'public_key' => $user->public_key], 200);
+        return response()->json(['message' => "Public keys, if any, have been retrieved.", 'public_keys' => $public_keys], 200);
     }
 }

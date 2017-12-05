@@ -18,8 +18,8 @@ $router->group(['middleware' => 'auth'], function ($router) {
     // Logs the user out
     $router->get('logout', 'UserController@logout');
 
-    // Gets a user's public key
-    $router->get('key/{username}', 'UserController@key');
+    // Gets a group of users' public keys
+    $router->post('keys', 'UserController@keys');
 });
 
 
@@ -39,10 +39,10 @@ $router->group(['middleware' => 'auth'], function ($router) {
   $router->get('file/{file_id}', 'FileController@download');
 
   // Updates a file with a specific ID
-  $router->put('file/{file_id}', 'FileController@update');
+  $router->post('file/{file_id}', 'FileController@update');
 
   // Renames a file with a specific ID
-  $router->post('file/{file_id}', 'FileController@rename');
+  $router->post('file/{file_id}/rename', 'FileController@rename');
 
   // Deletes a file with a specific ID
   $router->delete('file/{file_id}', 'FileController@delete');

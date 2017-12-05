@@ -15,9 +15,12 @@ class CreateLogsTable extends Migration
     {
         Schema::create('logs', function (Blueprint $table) {
             $table->increments('id');
-            $table->unsignedInteger('file_id')->references('id')->on('file');
-            $table->unsignedInteger('user_id')->references('id')->on('user');
+            $table->unsignedInteger('file_id');
+            $table->unsignedInteger('user_id');
             $table->timestamp('date')->useCurrent();
+
+            $table->foreign('file_id')->references('id')->on('files');
+            $table->foreign('user_id')->references('id')->on('users');
         });
     }
 

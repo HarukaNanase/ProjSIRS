@@ -16,10 +16,14 @@ class CreateFilesTable extends Migration
         Schema::create('files', function (Blueprint $table) {
             $table->increments('id');
             $table->string('name');
-            $table->unsignedInteger('owner')->references('id')->on('user');
+            $table->unsignedInteger('owner');
             $table->string('path')->unique()->nullable();
-            $table->unsignedInteger('parent')->references('id')->on('file')->nullable();
+            $table->unsignedInteger('parent')->nullable();
+            $table->boolean('needs_reciphering')->default(false);
             $table->timestamps();
+
+            $table->foreign('owner')->references('id')->on('users');
+            $table->foreign('parent')->references('id')->on('files');
         });
     }
 
