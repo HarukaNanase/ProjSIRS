@@ -55,6 +55,10 @@ class File extends Model
         $this->delete();
     }
 
+    public function isDirectory() {
+        return empty($this->path);
+    }
+
     /**
      * Define a one-to-many relationship
      */

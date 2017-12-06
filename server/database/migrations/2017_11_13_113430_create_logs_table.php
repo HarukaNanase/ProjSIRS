@@ -18,9 +18,7 @@ class CreateLogsTable extends Migration
             $table->unsignedInteger('file_id');
             $table->unsignedInteger('user_id');
             $table->timestamp('date')->useCurrent();
-
-            $table->foreign('file_id')->references('id')->on('files');
-            $table->foreign('user_id')->references('id')->on('users');
+            $table->string('message');
         });
     }
 
