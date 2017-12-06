@@ -29,29 +29,29 @@ $router->group(['middleware' => 'auth'], function ($router) {
 
 // Requires authentication
 $router->group(['middleware' => 'auth'], function ($router) {
-  // Uploads a new file
-  $router->post('file', 'FileController@upload');
+    // Gets the root directory
+    $router->get('file', 'FileController@root');
 
-  // Gets the root directory
-  $router->get('file', 'FileController@root');
+    // Downloads a file with a specific ID
+    $router->get('file/{file_id}', 'FileController@download');
 
-  // Downloads a file with a specific ID
-  $router->get('file/{file_id}', 'FileController@download');
+    // Uploads a new file
+    $router->post('file', 'FileController@upload');
 
-  // Updates a file with a specific ID
-  $router->post('file/{file_id}', 'FileController@update');
+    // Updates a file with a specific ID
+    $router->post('file/{file_id}', 'FileController@update');
 
-  // Renames a file with a specific ID
-  $router->post('file/{file_id}/rename', 'FileController@rename');
+    // Renames a file with a specific ID
+    $router->post('file/{file_id}/rename', 'FileController@rename');
 
-  // Deletes a file with a specific ID
-  $router->delete('file/{file_id}', 'FileController@delete');
+    // Deletes a file with a specific ID
+    $router->delete('file/{file_id}', 'FileController@delete');
 
-  // Shares a file with a specific ID with someone else
-  $router->post('file/{file_id}/share', 'FileController@share');
+    // Shares a file with a specific ID with someone else
+    $router->post('file/{file_id}/share', 'FileController@share');
 
-  // Revokes share of a file with a specific ID with someone else
-  $router->post('file/{file_id}/revoke', 'FileController@revoke');
+    // Revokes share of a file with a specific ID with someone else
+    $router->post('file/{file_id}/revoke', 'FileController@revoke');
 });
 
 /* -------------------
