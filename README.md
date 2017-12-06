@@ -7,9 +7,9 @@ CipherBox is a document sharing platform focused on absolute privacy and nearly-
 * [Client Installation](#client-installation)
 * [Server Installation](#server-installation)
 
-### Client Installation
+## Client Installation
 
-### Server Installation
+## Server Installation
 
 Development environment:
 
