@@ -44,8 +44,11 @@ $router->group(['middleware' => 'auth'], function ($router) {
     // Renames a file with a specific ID
     $router->post('file/{file_id}/rename', 'FileController@rename');
 
-    // Deletes a file with a specific ID
-    $router->delete('file/{file_id}', 'FileController@delete');
+    // Deletes a group of files with a specific IDs
+    $router->post('file/delete', 'FileController@delete');
+
+    // Gets all the "file_id => key" pairs within a folder, recursively
+    $router->get('file/{file_id}/keys', 'FileController@keys');
 
     // Shares a file with a specific ID with someone else
     $router->post('file/{file_id}/share', 'FileController@share');

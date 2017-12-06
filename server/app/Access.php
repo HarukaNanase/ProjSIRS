@@ -12,6 +12,11 @@ class Access extends Model
     public $timestamps = false;
 
     /**
+     * Overrides the primary key
+     */
+    protected $primaryKey = 'access_id';
+
+    /**
     * The attributes that are mass assignable.
     *
     * @var array
@@ -26,7 +31,7 @@ class Access extends Model
     * @var array
     */
     protected $guarded = [
-        'id',
+        'access_id',
     ];
 
     /**

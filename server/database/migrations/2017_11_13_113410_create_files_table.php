@@ -14,7 +14,7 @@ class CreateFilesTable extends Migration
     public function up()
     {
         Schema::create('files', function (Blueprint $table) {
-            $table->increments('id');
+            $table->increments('file_id');
             $table->string('name');
             $table->unsignedInteger('owner');
             $table->string('path')->unique()->nullable();
@@ -22,8 +22,8 @@ class CreateFilesTable extends Migration
             $table->boolean('needs_reciphering')->default(false);
             $table->timestamps();
 
-            $table->foreign('owner')->references('id')->on('users');
-            $table->foreign('parent')->references('id')->on('files');
+            $table->foreign('owner')->references('user_id')->on('users');
+            $table->foreign('parent')->references('file_id')->on('files');
         });
     }
 

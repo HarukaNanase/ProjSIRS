@@ -21,6 +21,11 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
     public $timestamps = false;
 
     /**
+     * Overrides the primary key
+     */
+    protected $primaryKey = 'user_id';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array
@@ -35,7 +40,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @var array
      */
     protected $guarded = [
-        'id',
+        'user_id',
     ];
 
     /**
@@ -62,7 +67,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * @return string                   The generated API token
      */
     public function generateToken(int $expirationSeconds) {
-        $this->api_token = Hash::make($this->id . Carbon::now()->toDateTimeString() . bin2hex(random_bytes(8)));
+        $this->api_token = Hash::make($this->user_id . Carbon::now()->toDateTimeString() . bin2hex(random_bytes(8)));
         $this->api_token_expiration = Carbon::now()->addSeconds($expirationSeconds);
         $this->save();
 
@@ -104,7 +109,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
      * Define a one-to-many relationship
      */
     public function files(){
-        return $this->hasMany('App\File', 'owner', 'id');
+        return $this->hasMany('App\File', 'owner', 'user_id');
     }
 
     /**

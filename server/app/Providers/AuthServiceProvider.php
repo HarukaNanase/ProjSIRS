@@ -52,19 +52,19 @@ class AuthServiceProvider extends ServiceProvider
                 return true;
             }
 
-            $access = Access::where('file_id', $file->parent)->where('user_id', $user->id)->first();
+            $access = Access::where('file_id', $file->parent)->where('user_id', $user->user_id)->first();
 
             return !empty($access);
         });
 
         Gate::define('file-read-modify', function ($user, $file) {
-            $access = Access::where('file_id', $file->id)->where('user_id', $user->id)->first();
+            $access = Access::where('file_id', $file->file_id)->where('user_id', $user->user_id)->first();
 
             return !empty($access);
         });
 
         Gate::define('file-share', function ($user, $file) {
-            return $user->id === $file->owner;
+            return $user->user_id === $file->owner;
         });
     }
 }

@@ -12,6 +12,11 @@ class File extends Model
     public $timestamps = true;
 
     /**
+     * Overrides the primary key
+     */
+    protected $primaryKey = 'file_id';
+
+    /**
     * The attributes that are mass assignable.
     *
     * @var array
@@ -26,7 +31,7 @@ class File extends Model
     * @var array
     */
     protected $guarded = [
-        'id',
+        'file_id',
     ];
 
     /**
@@ -39,20 +44,17 @@ class File extends Model
     ];
 
     /**
-     * Recursively deletes this file/folder
+     * Traverses through the file tree
      */
-    public function recursivelyDelete() {
-        if (!empty($this->path)) {
-            unlink($this->path);
+    public function treeTraverse() {
+        $contents = [$this];
+        if ($this->isDirectory()) {
+            foreach (File::where('parent', $this->file_id)->get() as $file) {
+                $contents = array_merge($file->treeTraverse(), $contents);
+            }
         }
 
-        $files = File::where('parent', $this->id)->get();
-
-        foreach ($files as $file) {
-            $file->recursivelyDelete();
-        }
-
-        $this->delete();
+        return $contents;
     }
 
     public function isDirectory() {
@@ -63,7 +65,7 @@ class File extends Model
      * Define a one-to-many relationship
      */
     public function user(){
-        return $this->belongsTo('App\User', 'id', 'owner');
+        return $this->belongsTo('App\User', 'user_id', 'owner');
     }
 
     /**
@@ -77,13 +79,13 @@ class File extends Model
      * Define a one-to-many relationship
      */
     public function contains(){
-        return $this->hasMany('App\File', 'parent', 'id');
+        return $this->hasMany('App\File', 'parent', 'file_id');
     }
 
     /**
      * Define a one-to-many relationship
      */
     public function containedBy(){
-        return $this->belongsTo('App\File', 'id', 'parent');
+        return $this->belongsTo('App\File', 'file_id', 'parent');
     }
 }

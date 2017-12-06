@@ -22,7 +22,7 @@ class CorsMiddleware
         }
 
         // Adds headers to the response
-        $response->headers->set('Access-Control-Allow-Methods', 'HEAD, GET, POST, DELETE');
+        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST');
         $response->headers->set('Access-Control-Allow-Headers', $request->header('Access-Control-Request-Headers'));
         $response->headers->set('Access-Control-Allow-Origin', '*');
 

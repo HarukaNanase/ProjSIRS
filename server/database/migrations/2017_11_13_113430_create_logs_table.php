@@ -14,7 +14,7 @@ class CreateLogsTable extends Migration
     public function up()
     {
         Schema::create('logs', function (Blueprint $table) {
-            $table->increments('id');
+            $table->increments('log_id');
             $table->unsignedInteger('file_id');
             $table->unsignedInteger('user_id');
             $table->timestamp('date')->useCurrent();
