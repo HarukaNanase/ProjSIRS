@@ -1,9 +1,7 @@
 // @flow
-import { List } from 'immutable';
 import { ipcRenderer } from '../lib/electron';
 import server from '../lib/server';
 import type { State } from '../reducers/index';
-import { User } from '../types/user';
 import type { Dispatch, PromiseAction, ThunkAction } from './index';
 
 export const UserActionTypes = {
@@ -11,7 +9,6 @@ export const UserActionTypes = {
   SET_PUBLIC_KEY: 'USER/SET_PUBLIC_KEY',
   SET_TOKEN: 'USER/SET_TOKEN',
   SET_USER: 'USER/SET_USER',
-  ADD_USER: 'USER/ADD_USER',
 };
 
 export const setPrivateKey = (privateKey: any) => ({
@@ -26,17 +23,8 @@ export const setToken = (token?: string) => ({
   type: UserActionTypes.SET_TOKEN, payload: token,
 });
 
-export const setUser = (user: User) => ({
-  type: UserActionTypes.SET_USER, payload: user
-});
-
-/**
- * Adds an user or users to the users list.
- * @param user or users to be added.
- */
-export const addUser = (user: User | List<User>) => ({
-  type: UserActionTypes.ADD_USER,
-  payload: (List.isList(user) || Array.isArray(user) ) ? List(user) : List([user]),
+export const setUser = (username: string) => ({
+  type: UserActionTypes.SET_USER, payload: username
 });
 
 /**

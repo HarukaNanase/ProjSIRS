@@ -10,8 +10,8 @@ import {
   clearSelectedRemoteFiles,
   exitEditMode,
   exitNewDirectoryMode,
-  saveNewRemoteDirectory,
-  saveRenameRemoteFile,
+  newRemoteDirectory,
+  renameRemoteFile,
   selectRemoteFile
 } from '../../actions/remoteFile';
 import { loadRemotePath } from '../../actions/remotePath';
@@ -42,8 +42,8 @@ type PropsType = {
     exitEditMode: typeof exitEditMode,
     exitNewDirectoryMode: typeof exitNewDirectoryMode,
     clearSelectedRemoteFiles: typeof clearSelectedRemoteFiles,
-    saveRenameRemoteFile: typeof saveRenameRemoteFile,
-    saveNewRemoteDirectory: typeof saveNewRemoteDirectory,
+    renameRemoteFile: typeof renameRemoteFile,
+    newRemoteDirectory: typeof newRemoteDirectory,
   },
   currentRemoteFileId: number,
   currentRemoteFilesIdsJoinedPath: string,
@@ -90,10 +90,10 @@ class FileTable extends React.Component<PropsType> {
     }
     // We just renamed a new directory, therefore create a new folder if the name is not empty.
     if (inNewDirectoryMode && remoteFileId === NEW_DIRECTORY_ID) {
-      actions.saveNewRemoteDirectory(currentRemoteFileId, newName);
+      actions.newRemoteDirectory(currentRemoteFileId, newName);
       actions.exitNewDirectoryMode();
     } else {
-      actions.saveRenameRemoteFile(remoteFileId, newName);
+      actions.renameRemoteFile(remoteFileId, newName);
     }
   };
 
@@ -108,7 +108,7 @@ class FileTable extends React.Component<PropsType> {
 
   renderFileRow = (remoteFile: RemoteFile) => {
     const {selectedIds, editId, inEditMode, currentRemoteFilesIdsJoinedPath} = this.props;
-    const membersCount = remoteFile.membersUsernames.size + 1;
+    const membersCount = remoteFile.allMembers.size;
     const members = membersCount === 1 ? 'Only you' : `${membersCount} members`;
     return (
       <Table.Row
@@ -209,8 +209,8 @@ const mapDispatchToProps = (dispatch: Dispatch) => ({
     exitEditMode,
     exitNewDirectoryMode,
     clearSelectedRemoteFiles,
-    saveRenameRemoteFile,
-    saveNewRemoteDirectory,
+    renameRemoteFile,
+    newRemoteDirectory,
   }, dispatch)
 });
 

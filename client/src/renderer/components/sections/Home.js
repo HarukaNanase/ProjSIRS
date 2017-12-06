@@ -4,7 +4,6 @@ import { withRouter } from 'react-router-dom';
 import Header from '../layout/Header';
 import FileTable from '../table/FileTable';
 import ActionBar from './ActionBar';
-import Progress from 'semantic-ui-react/dist/es/modules/Progress/Progress';
 
 class Home extends React.Component<any> {
 

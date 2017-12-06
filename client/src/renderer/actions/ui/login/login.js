@@ -4,7 +4,6 @@ import { ipcRenderer } from '../../../lib/electron';
 import server from '../../../lib/server';
 import type { State } from '../../../reducers/index';
 import { getCustomSecret, getPassword, getUsername, hasCustomSecret } from '../../../selectors/ui/login/login';
-import { User } from '../../../types/user';
 import type { Dispatch, PromiseAction, ThunkAction } from '../../index';
 import { authenticate, setUser } from '../../user';
 
@@ -83,7 +82,7 @@ export const login = (history: any): ThunkAction =>
 
       // Authenticate the user.
       await dispatch(authenticate(responseData.api_token, privateKey));
-      await dispatch(setUser(new User({username})));
+      await dispatch(setUser(username));
 
       // Navigate to the wanted page
       const {from: {pathname}} = history.location.state || {from: {pathname: '/'}};

@@ -5,6 +5,7 @@ import { Button, Form, Input } from 'semantic-ui-react';
 type PropsType = {
   name: string,
   editable: boolean,
+  needsReciphering: boolean,
   onNameChange: (name: string) => void,
   onCancel: () => void,
 };
@@ -62,8 +63,9 @@ class NameCell extends React.Component<PropsType, StateType> {
     if (!this.props.editable) {
       return this.props.name;
     }
+    const width = this.props.needsReciphering ? 50 + 25 : 50;
     return (
-      <Form onSubmit={this.onSubmit} style={{display: 'inline-block', width: 'calc(100% - 50px)'}}>
+      <Form onSubmit={this.onSubmit} style={{display: 'inline-block', width: `calc(100% - ${width})`}}>
         <Input
           style={{width: 'calc(100% - 80px)'}}
           type="text"

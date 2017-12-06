@@ -1,24 +1,7 @@
 // @flow
-import { Map, Record } from 'immutable';
-
-type UserType = {
-  username: string;
-}
-
-const userDefaultValues: UserType = {
-  username: ''
-};
-
-const UserRecord = Record(userDefaultValues);
-
-export class User extends UserRecord<UserType> {
-  username: string;
-}
-
-export type UserMapType = Map<string, User>;
+import { Record } from 'immutable';
 
 type UserStateType = {
-  entities: UserMapType,
   username?: string,
   token?: string,
   privateKey?: any,
@@ -26,7 +9,6 @@ type UserStateType = {
 };
 
 const defaultValues: UserStateType = {
-  entities: Map(),
   username: undefined,
   token: undefined,
   privateKey: undefined,
@@ -36,7 +18,6 @@ const defaultValues: UserStateType = {
 const UserStateRecord = Record(defaultValues);
 
 class UserState extends UserStateRecord<UserStateType> {
-  entities: UserMapType;
   username: string;
   token: string;
   privateKey: any;

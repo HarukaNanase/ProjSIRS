@@ -100,11 +100,6 @@ const decipherFile = (key, srcPath, dstPath) => {
   return result;
 };
 
-// const key64 = 'FpMspyBH5YASPPdfI8twag==';
-// const key = forge.util.decode64(key64);
-// cipherFile(key, '/home/andre/latch.smv', '/home/andre/latch.smv.enc');
-// decipherFile(key, '/home/andre/latch.smv.enc', '/home/andre/latch.smv.orig');
-
 ipcMain.on('revokeFile', (event, {token, baseUrl}, remoteFileId, usernames) => {
   request.post({
     baseUrl,
@@ -118,9 +113,7 @@ ipcMain.on('revokeFile', (event, {token, baseUrl}, remoteFileId, usernames) => {
   });
 });
 
-ipcMain.on('shareFile', async (event, {token, baseUrl}, key64, remoteFileId, usernames) => {
-  const key = forge.util.decode64(key64);
-
+ipcMain.on('shareFile', async (event, {token, baseUrl}, privateKeyPem, remoteFileId, usernames) => {
   // Create a custom request object to be used in both requests (fetch keys, share).
   const customRequest = request.defaults({
     baseUrl,
@@ -136,25 +129,32 @@ ipcMain.on('shareFile', async (event, {token, baseUrl}, key64, remoteFileId, use
     if (error) reject(error);
     else resolve(body);
   }));
+  // Fetch the usernames that were real and that the server had.
+  usernames = Object.keys(public_keys);
 
-  // Encrypt the file key with each shared user key.
-  // Build all public keys from the pems, and encrypt the file key for each shared user.
-  usernames = [];
-  for (let username in public_keys) {
-    if (public_keys.hasOwnProperty(username)) {
-      usernames.push(username);
-      const publicKey = forge.pki.publicKeyFromPem(public_keys[username]);
-      public_keys[username] = forge.util.encode64(publicKey.encrypt(key));
+  const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
+  const {keys} = await new Promise((resolve, reject) => customRequest.get({
+    uri: `/file/${remoteFileId}/keys`,
+  }, (error, response, body) => {
+    if (error) reject(error);
+    else resolve(body);
+  }));
+
+  // Encrypt the file keys with users' public keys.
+  const formData = {};
+  for (let id in keys) {
+    if (keys.hasOwnProperty(id)) {
+      const key = privateKey.decrypt(forge.util.decode64(keys[id]));
+
+      for (let username in public_keys) {
+        if (public_keys.hasOwnProperty(username)) {
+          const publicKey = forge.pki.publicKeyFromPem(public_keys[username]);
+          formData[`keys[${id}][${username}]`] = forge.util.encode64(publicKey.encrypt(key));
+        }
+      }
     }
   }
-
   // Make the share request
-  const formData = {};
-  // Construct the keys map.
-  for (let username in public_keys) {
-    if (public_keys.hasOwnProperty(username))
-      formData['keys[' + username + ']'] = public_keys[username];
-  }
   customRequest.post({
     uri: `/file/${remoteFileId}/share`,
     formData
@@ -166,42 +166,118 @@ ipcMain.on('shareFile', async (event, {token, baseUrl}, key64, remoteFileId, use
   });
 });
 
-ipcMain.on('editFile', (event, {token, baseUrl}, key64, remoteFileId, filePath) => {
-  const key = forge.util.decode64(key64);
+ipcMain.on('editFile', async (event, {token, baseUrl}, key64, remoteFileId, filePath, recipher, name, allMembersUsernames) => {
+  let key = forge.util.decode64(key64);
+  const formData = {};
+
+  // Create a custom request object to be used in both requests (fetch keys, edit file).
+  const customRequest = request.defaults({
+    baseUrl,
+    auth: {bearer: token},
+    json: true,
+  });
+
+  // If needs reciphering, generate a new key, cipher the name and cipher the new key.
+  if (recipher) {
+    key = forge.random.getBytesSync(KEY_SIZE);
+    // Recipher the name
+    formData.name = cipherFileName(key, name);
+    // Fetch all public keys from all the users.
+    const {public_keys} = await new Promise((resolve, reject) => customRequest.post({
+      uri: '/keys',
+      form: {usernames: allMembersUsernames}
+    }, (error, response, body) => {
+      if (error) reject(error);
+      else resolve(body);
+    }));
+
+    // Re-encrypt the file key with each shared user key.
+    // Build all public keys from the pems, and encrypt the file key for each shared user.
+    for (let username in public_keys) {
+      if (public_keys.hasOwnProperty(username)) {
+        const publicKey = forge.pki.publicKeyFromPem(public_keys[username]);
+        public_keys[username] = forge.util.encode64(publicKey.encrypt(key));
+      }
+    }
+
+    // Construct the keys map.
+    for (let username in public_keys) {
+      if (public_keys.hasOwnProperty(username))
+        formData['keys[' + username + ']'] = public_keys[username];
+    }
+  }
+
   // Cipher the file.
   cipherFile(key, filePath, encryptedPath(filePath));
 
-  // Make the upload request
-  const formData = {
-    file: {
-      value: fs.createReadStream(encryptedPath(filePath)),
-      options: {
-        filename: forge.util.encode64(forge.random.getBytesSync(32))
-      }
-    },
+  // Make the edit request
+  formData.file = {
+    value: fs.createReadStream(encryptedPath(filePath)),
+    options: {
+      filename: forge.util.encode64(forge.random.getBytesSync(32))
+    }
   };
-  request.post({
-    baseUrl,
-    auth: {bearer: token},
+  customRequest.post({
     uri: `/file/${remoteFileId}`,
     formData
   }, (error) => {
     if (filePath) fs.unlink(encryptedPath(filePath));
-    event.sender.send('editFile', !error);
+    const result = {
+      error,
+      key: forge.util.encode64(key),
+    };
+    event.sender.send('editFile', result);
   });
 });
 
-ipcMain.on('renameFile', (event, {token, baseUrl}, key64, remoteFileId, name) => {
-  const key = forge.util.decode64(key64);
-  const cipheredName = cipherFileName(key, name);
-  request.post({
+ipcMain.on('renameFile', async (event, {token, baseUrl}, key64, remoteFileId, name, recipher, allMembersUsernames) => {
+  let key = forge.util.decode64(key64);
+  const form = {};
+  // Create a custom request object to be used in both requests (fetch keys, edit file).
+  const customRequest = request.defaults({
     baseUrl,
-    uri: `/file/${remoteFileId}/rename`,
     auth: {bearer: token},
     json: true,
-    form: {name: cipheredName}
+  });
+
+  // If needs reciphering, generate a new key, cipher the name and cipher the new key.
+  if (recipher) {
+    key = forge.random.getBytesSync(KEY_SIZE);
+    // Fetch all public keys from all the users.
+    const {public_keys} = await new Promise((resolve, reject) => customRequest.post({
+      uri: '/keys',
+      form: {usernames: allMembersUsernames}
+    }, (error, response, body) => {
+      if (error) reject(error);
+      else resolve(body);
+    }));
+
+    // Re-encrypt the file key with each shared user key.
+    // Build all public keys from the pems, and encrypt the file key for each shared user.
+    for (let username in public_keys) {
+      if (public_keys.hasOwnProperty(username)) {
+        const publicKey = forge.pki.publicKeyFromPem(public_keys[username]);
+        public_keys[username] = forge.util.encode64(publicKey.encrypt(key));
+      }
+    }
+
+    // Construct the keys map.
+    for (let username in public_keys) {
+      if (public_keys.hasOwnProperty(username))
+        form['keys[' + username + ']'] = public_keys[username];
+    }
+  }
+
+  form.name = cipherFileName(key, name);
+  customRequest.post({
+    uri: `/file/${remoteFileId}/rename`,
+    form,
   }, (error) => {
-    event.sender.send('renameFile', !error);
+    const result = {
+      error,
+      key: forge.util.encode64(key),
+    };
+    event.sender.send('renameFile', result);
   });
 });
 
@@ -220,7 +296,7 @@ ipcMain.on('downloadFile', (event, {token, baseUrl}, key64, remoteFileId, filePa
   }).pipe(fs.createWriteStream(encryptedPath(filePath)));
 });
 
-ipcMain.on('uploadFile', async (event, {token, baseUrl}, sharedUsernames, name, parent, filePath) => {
+ipcMain.on('uploadFile', async (event, {token, baseUrl}, allMembersUsernames, name, parent, filePath) => {
   // Generate a new key and IV.
   const key = forge.random.getBytesSync(KEY_SIZE);
   const key64 = forge.util.encode64(key);
@@ -244,7 +320,7 @@ ipcMain.on('uploadFile', async (event, {token, baseUrl}, sharedUsernames, name, 
   // Fetch all public keys from all the users.
   const {public_keys} = await new Promise((resolve, reject) => customRequest.post({
     uri: '/keys',
-    form: {usernames: sharedUsernames}
+    form: {usernames: allMembersUsernames}
   }, (error, response, body) => {
     if (error) reject(error);
     else resolve(body);

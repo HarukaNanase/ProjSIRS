@@ -77,7 +77,7 @@ export const loadRemotePath = (remoteFileId: number): ThunkAction =>
           membersUsernames: List(file.shared),
           modified: new Date(file.modified * 1000),
           created: new Date(file.created * 1000),
-          needsRecipher: file.needs_reciphering === 1,
+          needsReciphering: file.needs_reciphering === 1,
         })
       ));
       // Add the files and the path.

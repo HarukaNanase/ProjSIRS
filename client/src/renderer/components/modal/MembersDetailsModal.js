@@ -1,7 +1,7 @@
 // @flow
 import React from 'react';
 import { Map, List } from 'immutable';
-import { Button, Checkbox, Header, Modal, Table } from 'semantic-ui-react';
+import { Button, Checkbox, Header, Icon, Modal, Popup, Table } from 'semantic-ui-react';
 import { RemoteFile } from '../../types/remoteFile';
 
 type PropsType = {
@@ -42,24 +42,29 @@ class MembersDetailsModal extends React.Component<PropsType, StateType> {
   };
 
   render() {
-    const {onClose, remoteFile, username} = this.props;
-    const {usernamesSelected} = this.state;
+    const {onClose, remoteFile} = this.props;
     if (!remoteFile) {
-      return <div/>;
+      return null;
     }
-    const membersCount = remoteFile.membersUsernames.size + 1;
-    const title = `${remoteFile.name} - ${membersCount} Members`;
-    const isOwner = username === remoteFile.ownerUsername;
-
-    const tableRows = remoteFile.sharedUsernames.map((user: string) =>
-      <Table.Row key={user}>
-        <Table.Cell>{user}</Table.Cell>
+    const {usernamesSelected} = this.state;
+    const membersCount = remoteFile.allMembers.size;
+    const title = `${remoteFile.name} - ${membersCount} members`;
+    const isOwner = (this.props.username === remoteFile.ownerUsername);
+    const tableRows = remoteFile.allMembers.map((username: string) =>
+      <Table.Row key={username}>
+        <Table.Cell>
+          {username}
+          {
+            username === remoteFile.ownerUsername &&
+              <Popup trigger={<Icon name="star" />} content="Owner" position="right center" inverted/>
+          }
+          </Table.Cell>
         {
           isOwner &&
             <Table.Cell>
               {
-                user !== username ?
-                  <Checkbox onChange={this.onUsernameSelect(user)} checked={usernamesSelected.has(user)}/>
+                this.props.username !== username ?
+                  <Checkbox onChange={this.onUsernameSelect(username)} checked={usernamesSelected.has(username)}/>
                   :
                   <span>Unable</span>
               }

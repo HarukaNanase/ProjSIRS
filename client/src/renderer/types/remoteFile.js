@@ -1,5 +1,5 @@
 // @flow
-import { Map, Record, List } from 'immutable';
+import { Map, Record, List, Set } from 'immutable';
 
 type RemoteFileType = {
   id: number,
@@ -11,7 +11,7 @@ type RemoteFileType = {
   ownerUsername: string,
   membersUsernames: List<string>,
   key: string,
-  needsRecipher: boolean,
+  needsReciphering: boolean,
 };
 
 const remoteFileDefaultValues: RemoteFileType = {
@@ -24,7 +24,7 @@ const remoteFileDefaultValues: RemoteFileType = {
   ownerUsername: '',
   membersUsernames: List(),
   key: '',
-  needsRecipher: false,
+  needsReciphering: false,
 };
 
 const RemoteFileRecord = Record(remoteFileDefaultValues);
@@ -38,10 +38,10 @@ export class RemoteFile extends RemoteFileRecord<RemoteFileType> {
   ownerUsername: string;
   membersUsernames: List<string>;
   key: string;
-  needsRecipher: boolean;
+  needsReciphering: boolean;
 
-  get sharedUsernames(): Array<string> {
-    return this.membersUsernames.concat(this.ownerUsername).toArray();
+  get allMembers(): List<string> {
+    return Set(this.membersUsernames).add(this.ownerUsername).toList();
   }
 }
 

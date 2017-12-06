@@ -3,8 +3,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Icon, Table } from 'semantic-ui-react';
 import { RemoteFile } from '../../types/remoteFile';
+import RecipheringLabel from '../labels/RecipheringLabel';
 import NameCell from './NameCell';
-import Popup from 'semantic-ui-react/dist/es/modules/Popup/Popup';
 
 type PropsType = {
   remoteFile: RemoteFile,
@@ -28,20 +28,14 @@ class RemoteFileCell extends React.Component<PropsType> {
         onNameChange={onNameChange}
         onCancel={onCancel}
         editable={editable}
+        needsReciphering={remoteFile.needsReciphering}
       />
     );
     if (!remoteFile.directory) {
       return (
         <Table.Cell>
           <Icon name="file outline"/>
-          {
-            remoteFile.needsRecipher &&
-            <Popup
-              trigger={<Icon name="warning" color="red"/>}
-              content="File needs to updated!"
-              inverted
-            />
-          }
+          <RecipheringLabel needsReciphering={remoteFile.needsReciphering} directory={false}/>
           {nameCell}
         </Table.Cell>
       );
@@ -50,28 +44,14 @@ class RemoteFileCell extends React.Component<PropsType> {
       editable ?
         <Table.Cell>
           <Icon name="folder outline"/>
-          {
-            remoteFile.needsRecipher &&
-            <Popup
-              trigger={<Icon name="warning" color="red"/>}
-              content="Folder needs to be renamed!"
-              inverted
-            />
-          }
+          <RecipheringLabel needsReciphering={remoteFile.needsReciphering} directory/>
           {nameCell}
         </Table.Cell>
         :
         <Table.Cell>
           <Link to={`${currentRemoteFilesIdsJoinedPath}/${remoteFile.id}`} as="a">
             <Icon name="folder outline"/>
-            {
-              remoteFile.needsRecipher &&
-              <Popup
-                trigger={<Icon name="warning" color="red"/>}
-                content="Folder needs to be renamed!"
-                inverted
-              />
-            }
+            <RecipheringLabel needsReciphering={remoteFile.needsReciphering} directory/>
             {nameCell}
           </Link>
         </Table.Cell>

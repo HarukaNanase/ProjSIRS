@@ -7,13 +7,13 @@ import { bindActionCreators } from 'redux';
 import { Button, List as SemanticList } from 'semantic-ui-react';
 import type { Dispatch } from '../../actions/index';
 import {
-  downloadFile,
+  downloadRemoteFile,
   enterEditMode,
   enterNewDirectoryMode,
-  saveDeleteRemoteFile,
-  saveEditFile, saveRevokeFile,
-  saveShareRemoteFile,
-  saveUploadFile
+  deleteRemoteFile,
+  editRemoteFile, revokeRemoteFile,
+  shareRemoteFile,
+  uploadRemoteFile
 } from '../../actions/remoteFile';
 import withElectron from '../../hoc/withElectron';
 import type { State } from '../../reducers/index';
@@ -29,12 +29,12 @@ type PropsType = {
   actions: {
     enterEditMode: typeof enterEditMode,
     enterNewDirectoryMode: typeof enterNewDirectoryMode,
-    saveDeleteRemoteFile: typeof saveDeleteRemoteFile,
-    saveUploadFile: typeof saveUploadFile,
-    saveEditFile: typeof saveEditFile,
-    saveShareRemoteFile: typeof saveShareRemoteFile,
-    saveRevokeFile: typeof saveRevokeFile,
-    downloadFile: typeof downloadFile,
+    deleteRemoteFile: typeof deleteRemoteFile,
+    uploadRemoteFile: typeof uploadRemoteFile,
+    editRemoteFile: typeof editRemoteFile,
+    shareRemoteFile: typeof shareRemoteFile,
+    revokeRemoteFile: typeof revokeRemoteFile,
+    downloadRemoteFile: typeof downloadRemoteFile,
   },
   selectedIds: Map<number, boolean>,
   selectedFiles: List<RemoteFile>,
@@ -77,7 +77,7 @@ class ActionBar extends React.Component<PropsType, StateType> {
     if (!remoteFileId) return;
     const filePath = this.props.electron.remote.dialog.showSaveDialog();
     if (filePath) {
-      this.props.actions.downloadFile(remoteFileId, filePath);
+      this.props.actions.downloadRemoteFile(remoteFileId, filePath);
     }
   };
 
@@ -86,7 +86,7 @@ class ActionBar extends React.Component<PropsType, StateType> {
       properties: ['openFile']
     });
     if (filePaths && filePaths.length === 1) {
-      this.props.actions.saveUploadFile(this.props.currentRemoteFileId, filePaths[0]);
+      this.props.actions.uploadRemoteFile(this.props.currentRemoteFileId, filePaths[0]);
     }
   };
 
@@ -98,7 +98,7 @@ class ActionBar extends React.Component<PropsType, StateType> {
       properties: ['openFile']
     });
     if (filePaths) {
-      actions.saveEditFile(remoteFileId, filePaths[0]);
+      actions.editRemoteFile(remoteFileId, filePaths[0]);
     }
   };
 
@@ -113,7 +113,7 @@ class ActionBar extends React.Component<PropsType, StateType> {
   onDelete = () => {
     const remoteFilesIds = this.props.selectedIds.keySeq().toList();
     if (!remoteFilesIds) return;
-    this.props.actions.saveDeleteRemoteFile(this.props.currentRemoteFileId, remoteFilesIds);
+    this.props.actions.deleteRemoteFile(this.props.currentRemoteFileId, remoteFilesIds);
     this.closeDeleteModal();
   };
 
@@ -128,7 +128,7 @@ class ActionBar extends React.Component<PropsType, StateType> {
   onShare = (usernames: List<string>) => {
     const remoteFileId = this.props.selectedIds.keySeq().first();
     if (!remoteFileId) return;
-    this.props.actions.saveShareRemoteFile(remoteFileId, usernames);
+    this.props.actions.shareRemoteFile(remoteFileId, usernames);
     this.closeShareModal();
   };
 
@@ -143,7 +143,7 @@ class ActionBar extends React.Component<PropsType, StateType> {
   onRevoke = (usernames: List<string>) => {
     const remoteFileId = this.props.selectedIds.keySeq().first();
     if (!remoteFileId) return;
-    this.props.actions.saveRevokeFile(remoteFileId, usernames);
+    this.props.actions.revokeRemoteFile(remoteFileId, usernames);
     this.closeMemberDetailsModal();
   };
 
@@ -262,12 +262,12 @@ const mapDispatchToProps = (dispatch: Dispatch) => ({
   actions: bindActionCreators({
     enterEditMode,
     enterNewDirectoryMode,
-    saveDeleteRemoteFile,
-    saveUploadFile,
-    saveEditFile,
-    saveShareRemoteFile,
-    downloadFile,
-    saveRevokeFile,
+    deleteRemoteFile,
+    uploadRemoteFile,
+    editRemoteFile,
+    shareRemoteFile,
+    downloadRemoteFile,
+    revokeRemoteFile,
   }, dispatch)
 });
 

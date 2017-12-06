@@ -1,8 +1,7 @@
 // @flow
-import { Map } from 'immutable';
 import type { Action } from 'redux';
 import { UserActionTypes } from '../actions/user';
-import UserState, { User } from '../types/user';
+import UserState from '../types/user';
 
 const userReducer = (state: UserState = new UserState(), action: Action): UserState => {
   switch (action.type) {
@@ -16,11 +15,7 @@ const userReducer = (state: UserState = new UserState(), action: Action): UserSt
       return state.set('token', action.payload);
 
     case UserActionTypes.SET_USER:
-      return state.set('username', action.payload.username);
-
-    case UserActionTypes.ADD_USER:
-      return state.mergeIn(['entities'],
-        Map(action.payload.map((user: User): [string, User] => [user.username, user])));
+      return state.set('username', action.payload);
 
     default:
       return state;

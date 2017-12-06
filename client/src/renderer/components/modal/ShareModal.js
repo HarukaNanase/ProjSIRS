@@ -39,7 +39,7 @@ class ShareModal extends React.Component<PropsType, StateType> {
   render() {
     const {onClose, remoteFile} = this.props;
     if (!remoteFile) {
-      return <div/>;
+      return null;
     }
     const icon = remoteFile.directory ? 'folder' : 'file';
     return (
