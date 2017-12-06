@@ -4,8 +4,10 @@ import axios from 'axios';
 class AxiosWrapper {
   axiosInstance: any;
   token: ?string;
+  serverBaseUrl: string;
 
   constructor(serverBaseUrl: string, axiosOptions?: any) {
+    this.serverBaseUrl = serverBaseUrl;
     this.axiosInstance = axios.create(Object.assign({}, {
       // Server base url
       baseURL: serverBaseUrl,
@@ -26,6 +28,10 @@ class AxiosWrapper {
     return this.axiosInstance.post(path, data, config);
   }
 
+  delete(path: string, config?: any): Promise<*> {
+    return this.axiosInstance.delete(path, config);
+  }
+
   authenticate(token: string) {
     this.token = token;
     this.axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
@@ -34,6 +40,13 @@ class AxiosWrapper {
   deauthenticate() {
     this.token = null;
     delete this.axiosInstance.defaults.headers.common['Authorization'];
+  }
+
+  get info(): any {
+    return {
+      token: this.token,
+      baseUrl: this.serverBaseUrl
+    }
   }
 }
 

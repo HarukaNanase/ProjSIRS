@@ -12,7 +12,8 @@ const configureStorageEngine = (): any =>
     engine('client'),
     [
       ['user', 'token'],
-      ['user', 'secret'],
+      ['user', 'privateKey'],
+      ['user', 'username']
     ],
   );
 

@@ -1,0 +1,12 @@
+/* Settings */
+@import "settings/sizes";
+
+/* Elements */
+@import "elements/body";
+
+/* All react components */
+@import "../components/layout/Header";
+@import "../components/sections/ActionBar";
+@import "../components/sections/Navigation";
+@import "../components/sections/Home";
+@import "../components/table/FileTable";

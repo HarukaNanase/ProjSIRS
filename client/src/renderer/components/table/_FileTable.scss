@@ -1,0 +1,23 @@
+@import "../../style/settings/sizes";
+
+.FileTable {
+  thead {
+    tr {
+      height: $inner-padding;
+    }
+
+    th {
+      color: #6a7c8f !important;
+      font-weight: 500 !important;
+    }
+  }
+
+  tbody {
+    td {
+      & > .icon, & > a > .icon {
+        margin: 15px 15px 15px 0;
+        font-size: 2rem;
+      }
+    }
+  }
+}

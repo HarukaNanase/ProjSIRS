@@ -1,0 +1,14 @@
+@import "../../style/settings/sizes";
+
+.ActionBar {
+  position: fixed;
+  width: $action-bar-width;
+
+  .list {
+    margin-left: 20px;
+  }
+
+  .icon {
+    color: #4183c4;
+  }
+}

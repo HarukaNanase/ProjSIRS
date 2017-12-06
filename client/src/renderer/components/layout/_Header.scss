@@ -1,0 +1,26 @@
+@import "../../style/settings/sizes";
+
+.Header {
+  display: grid;
+  grid-template-columns: auto $action-bar-width;
+  grid-gap: $inner-padding;
+  align-items: center;
+
+  width: 100%;
+  height: $header-height + $inner-padding * 2;
+  position: fixed;
+  z-index: 20;
+  background-color: white;
+  padding: $inner-padding;
+
+  .user {
+    text-align: right;
+
+    .avatar {
+      width: 45px;
+      height: auto;
+      margin-left: 1rem;
+      margin-right: 0;
+    }
+  }
+}

@@ -1,12 +1,12 @@
 // @flow
-
 import { List } from 'immutable';
-import type { Dispatch, PromiseAction, ThunkAction } from '../../index';
-import type { State } from '../../../reducers/index';
-import server from '../../../lib/server';
 import { ipcRenderer } from '../../../lib/electron';
-import { authenticate, setPrivateKey, setPublicKey } from '../../user';
+import server from '../../../lib/server';
+import type { State } from '../../../reducers/index';
 import { getCustomSecret, getPassword, getUsername, hasCustomSecret } from '../../../selectors/ui/login/login';
+import { User } from '../../../types/user';
+import type { Dispatch, PromiseAction, ThunkAction } from '../../index';
+import { authenticate, setUser } from '../../user';
 
 export const LoginActionTypes = {
   SET_USERNAME: 'UI/LOGIN/SET_USERNAME',
@@ -69,34 +69,35 @@ export const login = (history: any): ThunkAction =>
       const hashedSecret = await ipcRenderer.sendAsync('hashSecret', secret);
 
       // Generate the hashed password
-      const hashedPassword = await ipcRenderer.sendAsync('hashPassword', password);
+      const hashedPassword = await ipcRenderer.sendAsync('hashPassword', username, password);
 
       const response = await server.post('/login', {
         username,
-        hashedPassword
+        password: hashedPassword
       });
 
-      const responseJson = await response.json();
-      if (response.ok) {
-        // Authenticate
-        await dispatch(authenticate(responseJson.token));
+      const responseData = response.data;
 
-        // Get the key pair
-        const {privateKey, publicKey} = await ipcRenderer.sendAsync('getKeyPair', response.privateKey, hashedSecret);
-        await dispatch(setPrivateKey(privateKey));
-        await dispatch(setPublicKey(publicKey));
+      // Get the private key
+      const privateKey = await ipcRenderer.sendAsync('getPrivateKey', responseData.private_key, hashedSecret);
 
-        // Navigate to the wanted page
-        const {from: {pathname}} = history.location.state || {from: {pathname: '/'}};
-        history.replace(pathname);
+      // Authenticate the user.
+      await dispatch(authenticate(responseData.api_token, privateKey));
+      await dispatch(setUser(new User({username})));
 
-        // Reset the login form
-        await dispatch(reset());
-      } else if (response.statusCode === 401) {
+      // Navigate to the wanted page
+      const {from: {pathname}} = history.location.state || {from: {pathname: '/'}};
+      history.replace(pathname);
+
+      // Reset the login form
+      await dispatch(reset());
+    } catch (error) {
+      const response = error.response;
+      if (response && (response.status === 422 || response.status === 401)) {
         dispatch(setErrors(List(['Username and password don\'t match.'])));
+      } else {
+        dispatch(setErrors(List(['Couldn\'t connect to server! Try again later.'])));
       }
-    } catch (e) {
-      dispatch(setErrors(List(['Couldn\'t connect to server. Try again later.'])));
     }
     dispatch(clearPassword());
     dispatch(setIsSubmitting(false));

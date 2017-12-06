@@ -2,12 +2,13 @@
 import React from 'react';
 import { render } from 'react-dom';
 import { createLoader as createStorageLoader, createMiddleware as createStorageMiddleware } from 'redux-storage';
+// Import css
+import 'semantic-ui-css/semantic.min.css';
+import { authenticate, deauthenticate } from './renderer/actions/user';
 import App from './renderer/App';
 import configureStorageEngine from './renderer/lib/configureStorageEngine';
 import configureStore from './renderer/lib/configureStore';
-
-// Import css
-import 'semantic-ui-css/semantic.min.css';
+import './renderer/style/base.css';
 
 const initialize = async () => {
   // Configure the persistent storage engine
@@ -23,7 +24,12 @@ const initialize = async () => {
   const load = createStorageLoader(storageEngine);
 
   // Load data from persistent storage into the store
-  await load(store);
+  const storage = await load(store);
+  if (storage.user && storage.user.privateKey && storage.user.token) {
+    await store.dispatch(authenticate(storage.user.token, storage.user.privateKey, true));
+  } else {
+    await store.dispatch(deauthenticate());
+  }
 
   // Render the application
   const root = document.getElementById('root');

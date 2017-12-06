@@ -3,8 +3,12 @@ import type { Reducer } from 'redux';
 import { combineReducers } from 'redux';
 import { reducer as storageReducer } from 'redux-storage';
 import merger from 'redux-storage-merger-immutablejs';
+import RemoteFileState from '../types/remoteFile';
+import RemotePathState from '../types/remotePath';
 import UiState from '../types/ui/ui';
 import UserState from '../types/user';
+import remoteFile from './remoteFile';
+import remotePath from './remotePath';
 import ui from './ui/ui';
 import user from './user';
 
@@ -14,6 +18,8 @@ import user from './user';
 export type State = {
   +ui: UiState,
   +user: UserState,
+  +remoteFile: RemoteFileState,
+  +remotePath: RemotePathState,
 };
 
 /**
@@ -22,6 +28,8 @@ export type State = {
 const rootReducer: Reducer<State> = storageReducer(combineReducers({
   ui,
   user,
+  remoteFile,
+  remotePath,
 }), merger);
 
 export default rootReducer;

@@ -3,10 +3,10 @@ import React from 'react';
 import { Provider } from 'react-redux';
 import { BrowserRouter, withRouter } from 'react-router-dom';
 import type { Store } from 'redux';
-import Main from './components/sections/Main';
+import Main from './components/layout/Main';
 import type { State } from './reducers';
 import { isAuthenticated } from './selectors/user';
-import Intro from './components/sections/Intro';
+import Intro from './components/layout/Intro';
 
 type PropsType = {
   store: Store<State>

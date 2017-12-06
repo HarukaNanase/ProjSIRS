@@ -1,0 +1,10 @@
+@import "../../style/settings/sizes";
+
+.Content {
+  position: relative;
+  top: $header-height + $inner-padding;
+  display: grid;
+  grid-template-columns: auto $action-bar-width;
+  grid-gap: $inner-padding;
+  padding: $inner-padding;
+}

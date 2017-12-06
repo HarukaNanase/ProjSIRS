@@ -3,9 +3,10 @@
 require('dotenv').load();
 
 const isDev = require('electron-is-dev');
-const {app, BrowserWindow} = require('electron');
+const {app, BrowserWindow, ipcMain} = require('electron');
 const path = require('path');
 const url = require('url');
+const fs = require('fs');
 
 /**
  * Installs extensions and debugging.
@@ -79,6 +80,10 @@ app.on('activate', function () {
   if (mainWindow === null) {
     createWindow();
   }
+});
+
+ipcMain.on('getFilename', (event, filePath) => {
+  event.sender.send('getFilename', path.basename(filePath));
 });
 
 // In this file you can include the rest of your app's specific main process

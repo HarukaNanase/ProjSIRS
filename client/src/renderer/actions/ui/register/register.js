@@ -1,6 +1,6 @@
 // @flow
 import { List } from 'immutable';
-import { MINIMUM_SECRET_LENGTH } from '../../../../constants';
+import { MINIMUM_SECRET_LENGTH } from '../../../constants/register';
 import server from '../../../lib/server';
 import { ipcRenderer } from '../../../lib/electron';
 import type { State } from '../../../reducers/index';
@@ -96,7 +96,7 @@ export const register = (history: any): ThunkAction =>
       const hashedSecret = await ipcRenderer.sendAsync('hashSecret', secret);
 
       // Generate the hash password
-      const hashedPassword = await ipcRenderer.sendAsync('hashPassword', password);
+      const hashedPassword = await ipcRenderer.sendAsync('hashPassword', username, password);
 
       // Generate key pair
       const { publicPem, privatePem } = await ipcRenderer.sendAsync('generateKeyPair', hashedSecret);
@@ -106,25 +106,26 @@ export const register = (history: any): ThunkAction =>
       console.log('Hashed password: ', hashedPassword);
 
       try {
-        const response = await server.post('/register', {
+        await server.post('/register', {
           username,
-          hashedPassword,
-          privateKey: privatePem,
-          publicKey: publicPem,
+          password: hashedPassword,
+          private_key: privatePem.trim(),
+          public_key: publicPem.trim(),
         });
 
-        if (response.ok) {
-          // Navigate to the wanted page
-          const {from: {pathname}} = history.location.state || {from: {pathname: '/'}};
-          history.replace(pathname);
+        // Navigate to the wanted page
+        const {from: {pathname}} = history.location.state || {from: {pathname: '/'}};
+        history.replace(pathname);
 
-          // Reset the login form
-          await dispatch(reset());
-        } else if (response.statusCode === 401) {
+        // Reset the login form
+        await dispatch(reset());
+      } catch (error) {
+        const response = error.response;
+        if (response && response.status === 422) {
           dispatch(setErrors(List(['An user with that username already exists.'])));
+        } else {
+          dispatch(setErrors(List(['Couldn\'t connect to server! Try again later.'])));
         }
-      } catch (e) {
-        dispatch(setErrors(List(['Couldn\'t connect to server. Try again later.'])));
       }
     }
 
