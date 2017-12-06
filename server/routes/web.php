@@ -38,14 +38,14 @@ $router->group(['middleware' => 'auth'], function ($router) {
     // Uploads a new file
     $router->post('file', 'FileController@upload');
 
+    // Deletes a group of files with specific IDs
+    $router->post('file/delete', 'FileController@delete');
+
     // Updates a file with a specific ID
-    $router->post('file/{file_id}', 'FileController@update');
+    $router->post('file/{file_id}/update', 'FileController@update');
 
     // Renames a file with a specific ID
     $router->post('file/{file_id}/rename', 'FileController@rename');
-
-    // Deletes a group of files with a specific IDs
-    $router->post('file/delete', 'FileController@delete');
 
     // Gets all the "file_id => key" pairs within a folder, recursively
     $router->get('file/{file_id}/keys', 'FileController@keys');
