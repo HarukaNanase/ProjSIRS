@@ -110,6 +110,8 @@ export const shareRemoteFile = (remoteFileId: number, usernames: List<string>): 
       dispatch(addRemoteFiles(List([
         remoteFile.set('membersUsernames', remoteFile.membersUsernames.merge(List(result.usernames)))
       ])));
+    } else {
+      electron.renderer.showErrorBox('Something went wrong :(', 'Unable to share the file right now! Try again later.');
     }
     dispatch(setLoadingRemotePath(false));
   };
@@ -131,6 +133,8 @@ export const revokeRemoteFile = (remoteFileId: number, usernames: List<string>):
             .set('needsReciphering', true)
         ])
       ));
+    } else {
+      electron.renderer.showErrorBox('Something went wrong :(', 'Unable to revoke the file right now! Try again later.');
     }
     dispatch(setLoadingRemotePath(false));
   };
@@ -146,8 +150,12 @@ export const downloadRemoteFile = (remoteFileId: number, filePath: string): Thun
     const remoteFileKey = getRemoteFileSelectors(remoteFileId).getRemoteFileKey(getState());
     dispatch(setLoadingRemotePath(true));
     const result = await ipcRenderer.sendAsync('downloadFile', remoteFileId, remoteFileKey, filePath);
-    if (!result) {
-      electron.renderer.showErrorBox('Something went wrong :(', 'Unable to download the file now! Try again later.');
+    if (!result.error) {
+      if (!result.deciphered) {
+        electron.renderer.showErrorBox('Unable to decipher the file', 'The file was probably tampered with on the server. We are truly sorry for your loss, but at least they didn\'t got to see the content!');
+      }
+    } else {
+      electron.renderer.showErrorBox('Something went wrong :(', 'Unable to download the file right now! Try again later.');
     }
     dispatch(setLoadingRemotePath(false));
   };
@@ -183,6 +191,8 @@ export const uploadRemoteFile = (parentRemoteFileId: number, filePath: string): 
       const files = getRemotePathSelectors(parentRemoteFileId).getRemoteFiles(getState());
       // Add the new directory into that list of files.
       dispatch(addRemotePath(parentRemoteFileId, files.push(remoteDirectory)));
+    } else {
+      electron.renderer.showErrorBox('Something went wrong :(', 'Unable to upload a file right now! Try again later.');
     }
     dispatch(setLoadingRemotePath(false));
   };
@@ -215,6 +225,8 @@ export const editRemoteFile = (remoteFileId: number, filePath: string): ThunkAct
             .set('needsReciphering', false)
         ])
       ));
+    } else {
+      electron.renderer.showErrorBox('Something went wrong :(', 'Unable to edit the file right now! Try again later.');
     }
     dispatch(setLoadingRemotePath(false));
   };
@@ -246,6 +258,8 @@ export const newRemoteDirectory = (parentRemoteFileId: number, name: string): Th
       const files = getRemotePathSelectors(parentRemoteFileId).getRemoteFiles(getState());
       // Add the new directory into that list of files.
       dispatch(addRemotePath(parentRemoteFileId, files.push(remoteDirectory)));
+    } else {
+      electron.renderer.showErrorBox('Something went wrong :(', 'Unable to create a directory right now! Try again later.');
     }
     dispatch(setLoadingRemotePath(false));
   };
@@ -277,6 +291,8 @@ export const renameRemoteFile = (remoteFileId: number, name: string): ThunkActio
         ])
       ));
       dispatch(exitEditMode());
+    } else {
+      electron.renderer.showErrorBox('Something went wrong :(', 'Unable to rename the file right now! Try again later.');
     }
     dispatch(setLoadingRemotePath(false));
   };
@@ -296,6 +312,8 @@ export const deleteRemoteFile = (parentId: number, remoteFilesIds: List<number>)
       dispatch(clearSelectedRemoteFiles());
       dispatch(removeRemoteFileFromRemotePath(parentId, remoteFilesIds));
       dispatch(deleteRemoteFiles(remoteFilesIds));
+    } else {
+      electron.renderer.showErrorBox('Something went wrong :(', 'Unable to delete the file right now! Try again later.');
     }
     dispatch(setLoadingRemotePath(false));
   };
