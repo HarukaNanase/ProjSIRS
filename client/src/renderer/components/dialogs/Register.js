@@ -116,18 +116,6 @@ class Register extends React.Component<PropsType> {
                     />
                   </Form.Field>
                 </Form.Group>
-                <Form.Field>
-                  <label>Custom secret (optional):</label>
-                  <Input
-                    fluid
-                    icon="key"
-                    iconPosition="left"
-                    placeholder="Custom secret"
-                    type="password"
-                    value={customSecret}
-                    onChange={this.onCustomSecretChange}
-                  />
-                </Form.Field>
                 <Button fluid size="large">Register</Button>
               </Segment>
               <Message style={{textAlign: 'center'}}>

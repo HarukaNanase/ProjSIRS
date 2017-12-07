@@ -81,18 +81,6 @@ class Login extends React.Component<PropsType> {
                     onChange={this.onPasswordChange}
                   />
                 </Form.Field>
-                <Form.Field>
-                  <label>Custom secret (if you have):</label>
-                  <Input
-                    fluid
-                    icon="key"
-                    iconPosition="left"
-                    placeholder="Custom secret"
-                    type="password"
-                    value={customSecret}
-                    onChange={this.onCustomSecretChange}
-                  />
-                </Form.Field>
                 <Button fluid size="large">Login</Button>
               </Segment>
             </Form>
