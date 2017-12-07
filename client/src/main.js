@@ -43,7 +43,7 @@ function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({width: 800, height: 600});
 
-  const entryUrl = process.env.ELECTRON_APP_URL || url.format({
+  const entryUrl = process.env.APP_URL || url.format({
     pathname: path.resolve(__dirname, '../build/index.html'),
     protocol: 'file:',
     slashes: true

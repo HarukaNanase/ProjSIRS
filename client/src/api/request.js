@@ -6,7 +6,7 @@ const getToken = () => token;
 const setToken = (t) => token = t;
 
 const customRequest = request.defaults({
-  baseUrl: process.env.REACT_APP_API_URL,
+  baseUrl: process.env.API_URL,
   json: true,
   auth: {bearer: getToken},
 });
