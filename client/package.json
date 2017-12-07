@@ -1,6 +1,6 @@
 {
   "name": "CipherBox",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "private": true,
   "dependencies": {
     "dotenv": "^4.0.0",
@@ -43,7 +43,10 @@
     "test": "react-scripts test --env=jsdom",
     "electron": "electron .",
     "build": "react-scripts build",
-    "build-electron": "electron-packager . --plataform=linux --out=./dist --overwrite=true --package-manager=yarn --ignore=src/renderer --ignore=flow-typed",
+    "build-electron-linux": "electron-packager . --plataform=linux --out=./dist --overwrite=true --package-manager=yarn --ignore=src/renderer --ignore=flow-typed",
+    "build-electron-windows": "electron-packager . --plataform=win32 --out=./dist --overwrite=true --package-manager=yarn --ignore=src/renderer --ignore=flow-typed",
+    "build-electron-osx": "electron-packager . --plataform=darwin --out=./dist --overwrite=true --package-manager=yarn --ignore=src/renderer --ignore=flow-typed",
+    "build-electron-all": "electron-packager . --plataform=all --out=./dist --overwrite=true --package-manager=yarn --ignore=src/renderer --ignore=flow-typed",
     "flow": "flow",
     "clean": "rimraf build dist",
     "postbuild": "rimraf build/**/*.map"
