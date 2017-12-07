@@ -1,7 +1,6 @@
 // @flow
 import { List } from 'immutable';
 import { MINIMUM_SECRET_LENGTH } from '../../../constants/register';
-import server from '../../../lib/server';
 import { ipcRenderer } from '../../../lib/electron';
 import type { State } from '../../../reducers/index';
 import {
@@ -99,33 +98,36 @@ export const register = (history: any): ThunkAction =>
       const hashedPassword = await ipcRenderer.sendAsync('hashPassword', username, password);
 
       // Generate key pair
-      const { publicPem, privatePem } = await ipcRenderer.sendAsync('generateKeyPair', hashedSecret);
+      const {publicPem, privatePem} = await ipcRenderer.sendAsync('generateKeyPair', hashedSecret);
 
       console.log('Public key:\n', publicPem);
       console.log(`Encrypted private key with ${hashedSecret}:\n`, privatePem);
       console.log('Hashed password: ', hashedPassword);
 
       try {
-        await server.post('/register', {
+        const result = await ipcRenderer.sendAsync('register',
           username,
-          password: hashedPassword,
-          private_key: privatePem.trim(),
-          public_key: publicPem.trim(),
-        });
+          hashedPassword,
+          privatePem.trim(),
+          publicPem.trim(),
+        );
 
-        // Navigate to the wanted page
-        const {from: {pathname}} = history.location.state || {from: {pathname: '/'}};
-        history.replace(pathname);
+        if (!result.error) {
+          // Navigate to the wanted page
+          const {from: {pathname}} = history.location.state || {from: {pathname: '/'}};
+          history.replace(pathname);
 
-        // Reset the login form
-        await dispatch(reset());
-      } catch (error) {
-        const response = error.response;
-        if (response && response.status === 422) {
-          dispatch(setErrors(List(['An user with that username already exists.'])));
+          // Reset the login form
+          await dispatch(reset());
         } else {
-          dispatch(setErrors(List(['Couldn\'t connect to server! Try again later.'])));
+          const response = result.response;
+          if (response && response.statusCode === 422) {
+            dispatch(setErrors(List(['An user with that username already exists.'])));
+          } else {
+            dispatch(setErrors(List(['Couldn\'t connect to server! Try again later.'])));
+          }
         }
+      } catch (error) {
       }
     }
 

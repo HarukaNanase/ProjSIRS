@@ -2,9 +2,7 @@
 import { List } from 'immutable';
 import { isRootDirectory } from '../constants/remoteFile';
 import { ipcRenderer } from '../lib/electron';
-import server from '../lib/server';
 import type { State } from '../reducers/index';
-import { getPrivateKey } from '../selectors/user';
 import { RemoteFile } from '../types/remoteFile';
 import type { Dispatch, PromiseAction, ThunkAction } from './index';
 import { addRemoteFiles } from './remoteFile';
@@ -61,29 +59,22 @@ export const setLoadingRemotePath = (value: boolean) => ({
 export const loadRemotePath = (remoteFileId: number): ThunkAction =>
   async (dispatch: Dispatch, getState: () => State): PromiseAction => {
     dispatch(setLoadingRemotePath(true));
-    try {
-      // Perform the request.
-      const directoryId = !isRootDirectory(remoteFileId) ? remoteFileId : undefined;
-      const {files} = await ipcRenderer.sendAsync('loadRemotePath',
-        server.info,
-        getPrivateKey(getState()),
-        directoryId,
-      );
-      // Transform the response to files.
-      const remoteFiles = List(files.map(
-        (file) => new RemoteFile({
-          ...file,
-          ownerUsername: file.owner,
-          membersUsernames: List(file.shared),
-          modified: new Date(file.modified * 1000),
-          created: new Date(file.created * 1000),
-          needsReciphering: file.needs_reciphering === 1,
-        })
-      ));
-      // Add the files and the path.
-      await dispatch(addRemoteFiles(remoteFiles));
-      await dispatch(addRemotePath(remoteFileId, remoteFiles));
-    } catch (ignored) {
-    }
+    // Perform the request.
+    const directoryId = !isRootDirectory(remoteFileId) ? remoteFileId : undefined;
+    const result = await ipcRenderer.sendAsync('loadRemotePath', directoryId);
+    // Transform the response to files.
+    const remoteFiles = List(result.files.map(
+      (file) => new RemoteFile({
+        ...file,
+        ownerUsername: file.owner,
+        membersUsernames: List(file.shared),
+        modified: new Date(file.modified * 1000),
+        created: new Date(file.created * 1000),
+        needsReciphering: file.needs_reciphering === 1,
+      })
+    ));
+    // Add the files and the path.
+    await dispatch(addRemoteFiles(remoteFiles));
+    await dispatch(addRemotePath(remoteFileId, remoteFiles));
     dispatch(setLoadingRemotePath(false));
   };

@@ -1,12 +1,11 @@
 // @flow
 import { List, Set } from 'immutable';
 import { isRootDirectory } from '../constants/remoteFile';
-import { ipcRenderer } from '../lib/electron';
-import server from '../lib/server';
+import electron, { ipcRenderer } from '../lib/electron';
 import type { State } from '../reducers/index';
 import { getRemoteFileSelectors } from '../selectors/remoteFile';
 import { getRemotePathSelectors } from '../selectors/remotePath';
-import { getPrivateKey, getUsername } from '../selectors/user';
+import { getUsername } from '../selectors/user';
 import { RemoteFile } from '../types/remoteFile';
 import type { Dispatch, PromiseAction, ThunkAction } from './index';
 import { addRemotePath, removeRemoteFileFromRemotePath, setLoadingRemotePath } from './remotePath';
@@ -103,36 +102,37 @@ export const exitNewDirectoryMode = () => ({
 export const shareRemoteFile = (remoteFileId: number, usernames: List<string>): ThunkAction =>
   async (dispatch: Dispatch, getState: () => State): PromiseAction => {
     console.log('Sharing file', remoteFileId, 'with', usernames.toJS());
+    dispatch(setLoadingRemotePath(true));
     const remoteFile = getRemoteFileSelectors(remoteFileId).getRemoteFile(getState());
-    const result = await ipcRenderer.sendAsync('shareFile',
-      server.info,
-      getPrivateKey(getState()),
-      remoteFileId,
-      usernames.toArray()
-    );
-    // Add the users to the list of shared users.
-    dispatch(addRemoteFiles(List([remoteFile.set('membersUsernames', remoteFile.membersUsernames.merge(List(result.usernames)))])));
+    const result = await ipcRenderer.sendAsync('shareFile', remoteFileId, usernames.toArray());
+    if (!result.error) {
+      // Add the users to the list of shared users.
+      dispatch(addRemoteFiles(List([
+        remoteFile.set('membersUsernames', remoteFile.membersUsernames.merge(List(result.usernames)))
+      ])));
+    }
+    dispatch(setLoadingRemotePath(false));
   };
 
 export const revokeRemoteFile = (remoteFileId: number, usernames: List<string>): ThunkAction =>
   async (dispatch: Dispatch, getState: () => State): PromiseAction => {
     if (!usernames.size) return;
     console.log('Revoking access from file', remoteFileId, 'from', usernames.toArray());
-    const result = await ipcRenderer.sendAsync('revokeFile',
-      server.info,
-      remoteFileId,
-      usernames.toArray()
-    );
-    const remoteFile = getRemoteFileSelectors(remoteFileId).getRemoteFile(getState());
-    // Remove the users from the members and mark the file as it needs reciphering.
-    const newMembersList = remoteFile.membersUsernames.filter((username) => !usernames.contains(username));
-    dispatch(addRemoteFiles(
-      List([
-        remoteFile
-          .set('membersUsernames', newMembersList)
-          .set('needsReciphering', true)
-      ])
-    ));
+    dispatch(setLoadingRemotePath(true));
+    const result = await ipcRenderer.sendAsync('revokeFile', remoteFileId, usernames.toArray());
+    if (!result.error) {
+      const remoteFile = getRemoteFileSelectors(remoteFileId).getRemoteFile(getState());
+      // Remove the users from the members and mark the file as it needs reciphering.
+      const newMembersList = remoteFile.membersUsernames.filter((username) => !usernames.contains(username));
+      dispatch(addRemoteFiles(
+        List([
+          remoteFile
+            .set('membersUsernames', newMembersList)
+            .set('needsReciphering', true)
+        ])
+      ));
+    }
+    dispatch(setLoadingRemotePath(false));
   };
 
 /**
@@ -145,12 +145,10 @@ export const downloadRemoteFile = (remoteFileId: number, filePath: string): Thun
     console.log('Downloading file to', remoteFileId, 'to', filePath);
     const remoteFileKey = getRemoteFileSelectors(remoteFileId).getRemoteFileKey(getState());
     dispatch(setLoadingRemotePath(true));
-    const result = await ipcRenderer.sendAsync('downloadFile',
-      server.info,
-      remoteFileKey,
-      remoteFileId,
-      filePath
-    );
+    const result = await ipcRenderer.sendAsync('downloadFile', remoteFileId, remoteFileKey, filePath);
+    if (!result) {
+      electron.renderer.showErrorBox('Something went wrong :(', 'Unable to download the file now! Try again later.');
+    }
     dispatch(setLoadingRemotePath(false));
   };
 
@@ -162,29 +160,30 @@ export const downloadRemoteFile = (remoteFileId: number, filePath: string): Thun
 export const uploadRemoteFile = (parentRemoteFileId: number, filePath: string): ThunkAction =>
   async (dispatch: Dispatch, getState: () => State): PromiseAction => {
     // Prepare the file upload.
-    const result = prepareFileUpload(getState(), parentRemoteFileId);
-    if (!result) return;
+    const preparation = prepareFileUpload(getState(), parentRemoteFileId);
+    if (!preparation) return;
     dispatch(setLoadingRemotePath(true));
     // Use the filename of the in the path as the name.
     const name = await ipcRenderer.sendAsync('getFilename', filePath);
     // Make the request.
-    const {id, key} = await ipcRenderer.sendAsync('uploadFile',
-      server.info,
-      result.allMembersUsernames,
+    const result = await ipcRenderer.sendAsync('uploadFile',
+      preparation.allMembersUsernames,
       name,
-      result.parent,
+      preparation.parent,
       filePath
     );
-    // Add the new remote file with the new id.
-    const remoteDirectory = new RemoteFile({
-      id, name, key,
-      ownerUsername: result.ownerUsername, membersUsernames: result.membersUsernames
-    });
-    dispatch(addRemoteFiles(List([remoteDirectory])));
-    // Fetch the old files of the parent.
-    const files = getRemotePathSelectors(parentRemoteFileId).getRemoteFiles(getState());
-    // Add the new directory into that list of files.
-    dispatch(addRemotePath(parentRemoteFileId, files.push(remoteDirectory)));
+    if (!result.error) {
+      // Add the new remote file with the new id.
+      const remoteDirectory = new RemoteFile({
+        id: result.id, name, key: result.key,
+        ownerUsername: result.ownerUsername, membersUsernames: result.membersUsernames
+      });
+      dispatch(addRemoteFiles(List([remoteDirectory])));
+      // Fetch the old files of the parent.
+      const files = getRemotePathSelectors(parentRemoteFileId).getRemoteFiles(getState());
+      // Add the new directory into that list of files.
+      dispatch(addRemotePath(parentRemoteFileId, files.push(remoteDirectory)));
+    }
     dispatch(setLoadingRemotePath(false));
   };
 
@@ -199,23 +198,24 @@ export const editRemoteFile = (remoteFileId: number, filePath: string): ThunkAct
     // Get the file's key.
     const remoteFile = getRemoteFileSelectors(remoteFileId).getRemoteFile(getState());
     dispatch(setLoadingRemotePath(true));
-    const result = await ipcRenderer.sendAsync('editFile',
-      server.info,
-      remoteFile.key,
+    const result = await ipcRenderer.sendAsync('updateFile',
       remoteFileId,
+      remoteFile.key,
       filePath,
       remoteFile.needsReciphering,
       remoteFile.name,
       remoteFile.allMembers.toArray(),
     );
-    // Add the new remote file with the new key and with needs reciphering false.
-    dispatch(addRemoteFiles(
-      List([
-        remoteFile
-          .set('key', result.key)
-          .set('needsReciphering', false)
-      ])
-    ));
+    if (!result.error) {
+      // Add the new remote file with the new key and with needs reciphering false.
+      dispatch(addRemoteFiles(
+        List([
+          remoteFile
+            .set('key', result.key)
+            .set('needsReciphering', false)
+        ])
+      ));
+    }
     dispatch(setLoadingRemotePath(false));
   };
 
@@ -227,27 +227,25 @@ export const editRemoteFile = (remoteFileId: number, filePath: string): ThunkAct
 export const newRemoteDirectory = (parentRemoteFileId: number, name: string): ThunkAction =>
   async (dispatch: Dispatch, getState: () => State): PromiseAction => {
     // Prepare the file upload.
-    const result = prepareFileUpload(getState(), parentRemoteFileId);
-    if (!result) return;
+    const preparation = prepareFileUpload(getState(), parentRemoteFileId);
+    if (!preparation) return;
     dispatch(setLoadingRemotePath(true));
-    try {
-      const {id, key} = await ipcRenderer.sendAsync('uploadFile',
-        server.info,
-        result.allMembersUsernames,
-        name,
-        result.parent,
-      );
+    const result = await ipcRenderer.sendAsync('uploadFile',
+      preparation.allMembersUsernames,
+      name,
+      preparation.parent,
+    );
+    if (!result.error) {
       // Add the new remote directory with the new id.
       const remoteDirectory = new RemoteFile({
-        id, directory: true, name, key,
-        ownerUsername: result.ownerUsername, membersUsernames: result.membersUsernames
+        id: result.id, directory: true, name, key: result.key,
+        ownerUsername: preparation.ownerUsername, membersUsernames: preparation.membersUsernames
       });
       dispatch(addRemoteFiles(List([remoteDirectory])));
       // Fetch the old files of the parent.
       const files = getRemotePathSelectors(parentRemoteFileId).getRemoteFiles(getState());
       // Add the new directory into that list of files.
       dispatch(addRemotePath(parentRemoteFileId, files.push(remoteDirectory)));
-    } catch (error) {
     }
     dispatch(setLoadingRemotePath(false));
   };
@@ -262,9 +260,8 @@ export const renameRemoteFile = (remoteFileId: number, name: string): ThunkActio
     const remoteFile = getRemoteFileSelectors(remoteFileId).getRemoteFile(getState());
     dispatch(setLoadingRemotePath(true));
     const result = await ipcRenderer.sendAsync('renameFile',
-      server.info,
-      remoteFile.key,
       remoteFileId,
+      remoteFile.key,
       name,
       remoteFile.needsReciphering && remoteFile.directory,
       remoteFile.allMembers.toArray()
@@ -292,17 +289,13 @@ export const renameRemoteFile = (remoteFileId: number, name: string): ThunkActio
 export const deleteRemoteFile = (parentId: number, remoteFilesIds: List<number>): ThunkAction =>
   async (dispatch: Dispatch, getState: () => State): PromiseAction => {
     dispatch(setLoadingRemotePath(true));
-    try {
-      // Delete all files one by one and wait for all.
-      const response = await server.post(`/file/delete`, {
-        files: remoteFilesIds.toArray()
-      });
+    // Delete all files one by one and wait for all.
+    const response = await ipcRenderer.sendAsync('deleteFile', remoteFilesIds.toArray());
+    if (!response.error) {
       // If no error is thrown, apply the changes.
       dispatch(clearSelectedRemoteFiles());
       dispatch(removeRemoteFileFromRemotePath(parentId, remoteFilesIds));
       dispatch(deleteRemoteFiles(remoteFilesIds));
-    } catch (error) {
-      // If some error happened, don't do anything, and keep the items selected.
     }
     dispatch(setLoadingRemotePath(false));
   };
@@ -317,13 +310,12 @@ export const deleteRemoteFile = (parentId: number, remoteFilesIds: List<number>)
  * @param parentRemoteFileId The identifier of the parent.
  * @returns Null if the parent file doesn't exist in the store. The parent and the shared usernames otherwise.
  */
-const prepareFileUpload = (state: State, parentRemoteFileId: number):
-  {
-    parent?: number,
-    membersUsernames: List<string>,
-    ownerUsername: string,
-    allMembersUsernames: Array<string>,
-  } | null => {
+const prepareFileUpload = (state: State, parentRemoteFileId: number): {
+  parent?: number,
+  membersUsernames: List<string>,
+  ownerUsername: string,
+  allMembersUsernames: Array<string>,
+} | null => {
   // Check if the parent is the root, if so, then there is no parent.
   const parent = !isRootDirectory(parentRemoteFileId) ? parentRemoteFileId : undefined;
   // When creating a new file you are the only owner.

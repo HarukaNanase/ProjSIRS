@@ -7,11 +7,12 @@ import { bindActionCreators } from 'redux';
 import { Button, List as SemanticList } from 'semantic-ui-react';
 import type { Dispatch } from '../../actions/index';
 import {
+  deleteRemoteFile,
   downloadRemoteFile,
+  editRemoteFile,
   enterEditMode,
   enterNewDirectoryMode,
-  deleteRemoteFile,
-  editRemoteFile, revokeRemoteFile,
+  revokeRemoteFile,
   shareRemoteFile,
   uploadRemoteFile
 } from '../../actions/remoteFile';
@@ -19,11 +20,12 @@ import withElectron from '../../hoc/withElectron';
 import type { State } from '../../reducers/index';
 import { getSelectedCount, getSelectedIds, getSelectedRemoteFiles } from '../../selectors/remoteFile';
 import { getCurrentRemoteFileId } from '../../selectors/remotePath';
+import { getUsername } from '../../selectors/user';
 import { RemoteFile } from '../../types/remoteFile';
 import DeleteModal from '../modal/DeleteModal';
-import ShareModal from '../modal/ShareModal';
 import MembersDetailsModal from '../modal/MembersDetailsModal';
-import { getUsername } from '../../selectors/user';
+import ShareModal from '../modal/ShareModal';
+import ShareButton from '../buttons/ShareButton';
 
 type PropsType = {
   actions: {
@@ -160,9 +162,10 @@ class ActionBar extends React.Component<PropsType, StateType> {
         }
         {
           selectedCount === 1 &&
-          <Button fluid primary onClick={this.openShareModal}>
-            Share
-          </Button>
+          <ShareButton
+            fluid primary onClick={this.openShareModal}
+            isOwner={firstSelectedRemoteFile && firstSelectedRemoteFile.ownerUsername === username}
+          />
         }
         {
           selectedCount > 1 &&

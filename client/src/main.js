@@ -6,7 +6,6 @@ const isDev = require('electron-is-dev');
 const {app, BrowserWindow, ipcMain} = require('electron');
 const path = require('path');
 const url = require('url');
-const fs = require('fs');
 
 /**
  * Installs extensions and debugging.
@@ -90,3 +89,4 @@ ipcMain.on('getFilename', (event, filePath) => {
 // code. You can also put them in separate files and require them here.
 
 require('./cryptography/ipc');
+require('./api/ipc');

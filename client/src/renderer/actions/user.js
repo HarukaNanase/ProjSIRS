@@ -1,6 +1,5 @@
 // @flow
 import { ipcRenderer } from '../lib/electron';
-import server from '../lib/server';
 import type { State } from '../reducers/index';
 import type { Dispatch, PromiseAction, ThunkAction } from './index';
 
@@ -39,18 +38,18 @@ export const setUser = (username: string) => ({
  */
 export const authenticate = (token: string, privateKey: any, renew: boolean = false): ThunkAction =>
   async (dispatch: Dispatch, getState: () => State): PromiseAction => {
-    // Authenticate the token.
-    server.authenticate(token);
+    ipcRenderer.send('setToken', token);
+    ipcRenderer.send('setPrivateKey', privateKey);
     // If renew, then renew the token.
     if (renew) {
-      try {
-        const {data} = await server.get('/renew');
-        token = data.api_token;
-        server.authenticate(token);
-      } catch (error) {
+      const result = await ipcRenderer.sendAsync('renew');
+      if (!result.error) {
+        token = result.token;
+        ipcRenderer.send('setToken', token);
+      } else {
         // If it was unable to renew is because it is stuck with an invalid token,
         // so remove it.
-        if (error.response && error.response.status === 401) {
+        if (result.response && result.response.statusCode === 401) {
           dispatch(deauthenticate());
           return;
         }
@@ -59,8 +58,8 @@ export const authenticate = (token: string, privateKey: any, renew: boolean = fa
     dispatch(setToken(token));
     dispatch(setPrivateKey(privateKey));
     // Get the public key
-    const publicKey = await ipcRenderer.sendAsync('getPublicKey', privateKey);
-    dispatch(setPublicKey(publicKey));
+    const publicKeyPem = await ipcRenderer.sendAsync('getPublicKey', privateKey);
+    dispatch(setPublicKey(publicKeyPem));
   };
 
 /**
@@ -70,13 +69,11 @@ export const deauthenticate = (history?: any): ThunkAction =>
   async (dispatch: Dispatch, getState: () => State): PromiseAction => {
     // If it was authenticated, logout
     if (history) {
-      try {
-        server.get('/logout');
-      } catch (ignored) {
-      }
+      ipcRenderer.send('logout');
     }
     // Stop using token
-    server.deauthenticate();
+    ipcRenderer.send('setToken', undefined);
+    ipcRenderer.send('setPrivateKey', undefined);
     // Delete token, and keys
     dispatch(setToken(undefined));
     dispatch(setPrivateKey(undefined));

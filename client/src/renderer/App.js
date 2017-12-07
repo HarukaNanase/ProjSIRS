@@ -1,7 +1,7 @@
 // @flow
 import React from 'react';
 import { Provider } from 'react-redux';
-import { BrowserRouter, withRouter } from 'react-router-dom';
+import { HashRouter, withRouter } from 'react-router-dom';
 import type { Store } from 'redux';
 import Main from './components/layout/Main';
 import type { State } from './reducers';
@@ -21,9 +21,9 @@ class App extends React.Component<PropsType> {
   render() {
     return (
       <Provider store={this.props.store}>
-        <BrowserRouter>
+        <HashRouter>
           <Authentication store={this.props.store}/>
-        </BrowserRouter>
+        </HashRouter>
       </Provider>
     );
   }

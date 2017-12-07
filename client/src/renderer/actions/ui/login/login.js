@@ -1,7 +1,6 @@
 // @flow
 import { List } from 'immutable';
 import { ipcRenderer } from '../../../lib/electron';
-import server from '../../../lib/server';
 import type { State } from '../../../reducers/index';
 import { getCustomSecret, getPassword, getUsername, hasCustomSecret } from '../../../selectors/ui/login/login';
 import type { Dispatch, PromiseAction, ThunkAction } from '../../index';
@@ -58,30 +57,26 @@ export const login = (history: any): ThunkAction =>
   async (dispatch: Dispatch, getState: () => State): PromiseAction => {
     dispatch(setIsSubmitting(true));
     dispatch(clearErrors());
-    try {
-      const state = getState();
-      const username = getUsername(state);
-      const password = getPassword(state);
-      const secret = hasCustomSecret(state) ? getCustomSecret(state) : password;
 
-      // Generate the hashed secret
-      const hashedSecret = await ipcRenderer.sendAsync('hashSecret', secret);
+    const state = getState();
+    const username = getUsername(state);
+    const password = getPassword(state);
+    const secret = hasCustomSecret(state) ? getCustomSecret(state) : password;
 
-      // Generate the hashed password
-      const hashedPassword = await ipcRenderer.sendAsync('hashPassword', username, password);
+    // Generate the hashed secret
+    const hashedSecret = await ipcRenderer.sendAsync('hashSecret', secret);
 
-      const response = await server.post('/login', {
-        username,
-        password: hashedPassword
-      });
+    // Generate the hashed password
+    const hashedPassword = await ipcRenderer.sendAsync('hashPassword', username, password);
 
-      const responseData = response.data;
+    const result = await ipcRenderer.sendAsync('login', username, hashedPassword);
 
+    if (!result.error) {
       // Get the private key
-      const privateKey = await ipcRenderer.sendAsync('getPrivateKey', responseData.private_key, hashedSecret);
+      const privateKeyPem = await ipcRenderer.sendAsync('getPrivateKey', result.privateKeyEncryptedPem, hashedSecret);
 
       // Authenticate the user.
-      await dispatch(authenticate(responseData.api_token, privateKey));
+      await dispatch(authenticate(result.token, privateKeyPem));
       await dispatch(setUser(username));
 
       // Navigate to the wanted page
@@ -90,9 +85,9 @@ export const login = (history: any): ThunkAction =>
 
       // Reset the login form
       await dispatch(reset());
-    } catch (error) {
-      const response = error.response;
-      if (response && (response.status === 422 || response.status === 401)) {
+    } else {
+      const response = result.response;
+      if (response && (response.statusCode === 422 || response.statusCode === 401)) {
         dispatch(setErrors(List(['Username and password don\'t match.'])));
       } else {
         dispatch(setErrors(List(['Couldn\'t connect to server! Try again later.'])));
