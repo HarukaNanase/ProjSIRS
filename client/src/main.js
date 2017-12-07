@@ -1,10 +1,11 @@
 // @flow
+const path = require('path');
+
 // Load .env configurations
-require('dotenv').load();
+require('dotenv').load({path: path.resolve(__dirname, '../.env')});
 
 const isDev = require('electron-is-dev');
 const {app, BrowserWindow, ipcMain} = require('electron');
-const path = require('path');
 const url = require('url');
 
 /**
@@ -48,7 +49,9 @@ function createWindow() {
     slashes: true
   });
   mainWindow.loadURL(entryUrl);
-  mainWindow.openDevTools();
+  if (isDev) {
+    mainWindow.openDevTools();
+  }
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function () {
