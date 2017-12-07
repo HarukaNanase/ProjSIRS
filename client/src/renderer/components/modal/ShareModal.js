@@ -12,6 +12,7 @@ type PropsType = {
 
 type StateType = {
   usernamesOptions: List<{ text: string, value: string }>,
+  selectedUsers: List<string>,
 };
 
 class ShareModal extends React.Component<PropsType, StateType> {
@@ -22,6 +23,7 @@ class ShareModal extends React.Component<PropsType, StateType> {
     super(props);
     this.state = {
       usernamesOptions: List(),
+      selectedUsers: List(),
     };
   }
 
@@ -31,13 +33,27 @@ class ShareModal extends React.Component<PropsType, StateType> {
     });
   };
 
+  onChange = (event: Event, data: {value: Array<string>}) => {
+    this.setState({
+      selectedUsers: List(data.value)
+    })
+  };
+
   onShare = () => {
-    const usernames = this.state.usernamesOptions.map((option: any) => option.value);
-    this.props.onShare(usernames);
+    this.props.onShare(this.state.selectedUsers);
+  };
+
+  onClose = () => {
+    this.props.onClose();
+    // Reset the state.
+    this.setState({
+      usernamesOptions: List(),
+      selectedUsers: List(),
+    });
   };
 
   render() {
-    const {onClose, remoteFile} = this.props;
+    const {remoteFile} = this.props;
     if (!remoteFile) {
       return null;
     }
@@ -45,7 +61,7 @@ class ShareModal extends React.Component<PropsType, StateType> {
     return (
       <Modal
         open
-        onClose={onClose}
+        onClose={this.onClose}
         size="small"
       >
         <Header icon={icon} content={remoteFile.name}/>
@@ -62,13 +78,14 @@ class ShareModal extends React.Component<PropsType, StateType> {
             multiple
             allowAdditions
             onAddItem={this.onAddUsername}
+            onChange={this.onChange}
           />
         </Modal.Content>
         <Modal.Actions>
-          <Button onClick={onClose}>
+          <Button onClick={this.onClose}>
             Cancel
           </Button>
-          <Button primary onClick={this.onShare}>
+          <Button primary onClick={this.onShare} disabled={!this.state.selectedUsers.size}>
             Share
           </Button>
         </Modal.Actions>

@@ -217,7 +217,7 @@ ipcMain.on('downloadFile', (event, remoteFileId, key64, dstFilePath) => {
   request.get(`/file/${remoteFileId}`).on('end', () => {
     const result = decipherFile(decode64(key64), encryptedPath(dstFilePath), dstFilePath);
     fs.unlink(encryptedPath(dstFilePath));
-    event.sender.send('downloadFile', {error: false, deciphered: !result});
+    event.sender.send('downloadFile', {error: false, deciphered: result});
   }).on('error', () => {
     event.sender.send('downloadFile', {error: true});
   }).pipe(fs.createWriteStream(encryptedPath(dstFilePath)));

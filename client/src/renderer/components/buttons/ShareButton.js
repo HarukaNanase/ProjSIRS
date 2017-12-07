@@ -4,6 +4,7 @@ import { Button, Popup } from 'semantic-ui-react';
 
 type PropsType = {
   isOwner: boolean,
+  ...any,
 };
 
 class ShareButton extends React.Component<PropsType> {

@@ -41,8 +41,16 @@ class MembersDetailsModal extends React.Component<PropsType, StateType> {
       this.state.usernamesSelected.filter((value) => value).keySeq().toList());
   };
 
+  onClose = () => {
+    this.props.onClose();
+    // Reset the state
+    this.setState({
+      usernamesSelected: Map(),
+    });
+  };
+
   render() {
-    const {onClose, remoteFile} = this.props;
+    const {remoteFile} = this.props;
     if (!remoteFile) {
       return null;
     }
@@ -75,7 +83,7 @@ class MembersDetailsModal extends React.Component<PropsType, StateType> {
     return (
       <Modal
         open
-        onClose={onClose}
+        onClose={this.onClose}
         size="small"
       >
         <Header icon="users" content={title}/>
@@ -102,7 +110,7 @@ class MembersDetailsModal extends React.Component<PropsType, StateType> {
               Revoke
             </Button>
           }
-          <Button onClick={onClose}>
+          <Button onClick={this.onClose}>
             Cancel
           </Button>
         </Modal.Actions>
