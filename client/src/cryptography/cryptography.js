@@ -1,10 +1,25 @@
 const forge = require('node-forge');
 const fs = require('fs');
+const crypto = require('crypto');
 
 const ALGORITHM = 'AES-CBC';
+const HASH_ALGORITHM = 'sha256';
+const HASH_SIZE = 256 / 8 * 2; // The size is 256 bits / 8 = 32 bytes. And 32 * 2 since the hash will be in the hex representation.
 const IV_SIZE = 16;
-const CANARY_SIZE = 8;
-const CANARY = 'T_26_M10';
+
+/**
+ * Hashes a given data with a given algorithm.
+ * Refer to https://nodejs.org/api/crypto.html#crypto_class_hash.
+ *  * @param data The data to be hashed.
+ * @param algorithm The algorithm of te hash.
+ * @returns string Hex of the hash.
+ */
+const hashContent = (data, algorithm) => {
+  const h = crypto.createHash(algorithm);
+  h.update(data);
+  return h.digest('hex');
+};
+
 /**
  * Ciphers the name of a file with the given key, by generating a new IV and appending to the file's name.
  * @param key The key of the file.
@@ -55,11 +70,14 @@ const decipherFileName = (key, fileName) => {
  */
 const cipherFile = (key, srcPath, dstPath) => {
   const input = fs.readFileSync(srcPath, {encoding: 'binary'});
+  // Hash the file.
+  const hash = hashContent(input, HASH_ALGORITHM);
+  // Cipher the file with the hash
   const fileIv = forge.random.getBytesSync(IV_SIZE);
   const cipher = forge.cipher.createCipher(ALGORITHM, key);
   cipher.start({iv: fileIv});
   cipher.update(forge.util.createBuffer(input, 'binary'));
-  cipher.update(forge.util.createBuffer(CANARY, 'binary'));
+  cipher.update(forge.util.createBuffer(hash, 'binary'));
   cipher.finish();
   const output = forge.util.createBuffer();
   output.putBuffer(cipher.output);
@@ -78,30 +96,26 @@ const cipherFile = (key, srcPath, dstPath) => {
 const decipherFile = (key, srcPath, dstPath) => {
   const fileBuffer = fs.readFileSync(srcPath);
   // Slice the iv and the ciphered file.
-  const cipheredFileBuffer = fileBuffer.slice(0, fileBuffer.length - IV_SIZE - (2*CANARY_SIZE));
-  // console.log(cipheredFileBuffer.length);
-  const cipheredCanaryBuffer = fileBuffer.slice(fileBuffer.length-IV_SIZE -(2*CANARY_SIZE), fileBuffer.length-IV_SIZE);
+  const cipheredFileBuffer = fileBuffer.slice(0, fileBuffer.length - IV_SIZE);
   const ivBuffer = fileBuffer.slice(fileBuffer.length - IV_SIZE);
   const fileIv = ivBuffer.toString('binary');
   const decipher = forge.cipher.createDecipher(ALGORITHM, key);
   decipher.start({iv: fileIv});
   decipher.update(forge.util.createBuffer(cipheredFileBuffer.toString('binary'), 'binary'));
-
-  decipher.update(forge.util.createBuffer(cipheredCanaryBuffer.toString('binary'), 'binary'));
   const result = decipher.finish();
   const buf = forge.util.createBuffer();
   buf.putBuffer(decipher.output);
   const data = buf.getBytes();
-
-  if (data.slice(data.length - CANARY_SIZE) !== CANARY) {
-  	console.log(data.slice(data.length - CANARY_SIZE));
+  const decipheredHashBuffer = data.slice(data.length - HASH_SIZE);
+  const decipheredFileBuffer = data.slice(0, data.length - HASH_SIZE);
+  const hash = hashContent(decipheredFileBuffer, HASH_ALGORITHM);
+  if (hash !== decipheredHashBuffer) {
     return false;
   } else {
-    fs.writeFileSync(dstPath, data.slice(0, data.length - CANARY_SIZE), {encoding: 'binary'});
+    fs.writeFileSync(dstPath, decipheredFileBuffer, {encoding: 'binary'});
     return result;
   }
 };
-
 
 /**
  * Decrypts a key in base 64 encrypted with a public key to the original key.
@@ -152,3 +166,4 @@ module.exports.decryptPrivateKey = decryptPrivateKey;
 module.exports.generateKey = generateKey;
 module.exports.publicKeyFromPem = publicKeyFromPem;
 module.exports.getKeyPair = getKeyPair;
+module.exports.hashContent = hashContent;

@@ -2,17 +2,14 @@ const path = require('path');
 const forge = require('node-forge');
 const {fork} = require('child_process');
 const {ipcMain} = require('electron');
+const {hashContent} = require('./cryptography');
 
 ipcMain.on('hashSecret', (event, secret) => {
-  const md = forge.md.sha256.create();
-  md.update(secret);
-  event.sender.send('hashSecret', md.digest().toHex());
+  event.sender.send('hashSecret', hashContent(secret, 'sha256'));
 });
 
 ipcMain.on('hashPassword', (event, username, password) => {
-  const md = forge.md.sha256.create();
-  md.update(username + password);
-  event.sender.send('hashPassword', md.digest().toHex());
+  event.sender.send('hashPassword', hashContent(username + password, 'sha256'));
 });
 
 ipcMain.on('getPrivateKey', (event, privateKeyEncryptedPem, secret) => {
