@@ -176,7 +176,7 @@ export const uploadRemoteFile = (parentRemoteFileId: number, filePath: string): 
       // Add the new remote file with the new id.
       const remoteDirectory = new RemoteFile({
         id: result.id, name, key: result.key,
-        ownerUsername: result.ownerUsername, membersUsernames: result.membersUsernames
+        ownerUsername: preparation.ownerUsername, membersUsernames: preparation.membersUsernames
       });
       dispatch(addRemoteFiles(List([remoteDirectory])));
       // Fetch the old files of the parent.

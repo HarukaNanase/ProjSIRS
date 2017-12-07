@@ -63,8 +63,8 @@ class NameCell extends React.Component<PropsType, StateType> {
     if (!this.props.editable) {
       return this.props.name;
     }
-    // Folder or file icon = 50px width; Reciphering warning label = 25px width;
-    const width = this.props.needsReciphering ? 50 + 25 : 50;
+    // Folder or file icon = 50px width; Reciphering warning label = 50px width;
+    const width = this.props.needsReciphering ? 100 : 50;
     return (
       <Form onSubmit={this.onSubmit} style={{display: 'inline-block', width: `calc(100% - ${width}px)`}}>
         <Input

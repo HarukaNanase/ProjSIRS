@@ -8,6 +8,7 @@ export const UserActionTypes = {
   SET_PUBLIC_KEY: 'USER/SET_PUBLIC_KEY',
   SET_TOKEN: 'USER/SET_TOKEN',
   SET_USER: 'USER/SET_USER',
+  LOGOUT: 'USER/LOGOUT',
 };
 
 export const setPrivateKey = (privateKey: any) => ({
@@ -24,6 +25,10 @@ export const setToken = (token?: string) => ({
 
 export const setUser = (username: string) => ({
   type: UserActionTypes.SET_USER, payload: username
+});
+
+export const logout = () => ({
+  type: UserActionTypes.LOGOUT
 });
 
 /**
@@ -48,11 +53,9 @@ export const authenticate = (token: string, privateKey: any, renew: boolean = fa
         ipcRenderer.send('setToken', token);
       } else {
         // If it was unable to renew is because it is stuck with an invalid token,
-        // so remove it.
-        if (result.response && result.response.statusCode === 401) {
-          dispatch(deauthenticate());
-          return;
-        }
+        // or the server is not there.
+        dispatch(deauthenticate());
+        return;
       }
     }
     dispatch(setToken(token));
@@ -74,10 +77,8 @@ export const deauthenticate = (history?: any): ThunkAction =>
     // Stop using token
     ipcRenderer.send('setToken', undefined);
     ipcRenderer.send('setPrivateKey', undefined);
-    // Delete token, and keys
-    dispatch(setToken(undefined));
-    dispatch(setPrivateKey(undefined));
-    dispatch(setPublicKey(undefined));
+    // Log out, which resets the store
+    dispatch(logout());
     // Send to /login
     if (history) {
       history.push('/login');
