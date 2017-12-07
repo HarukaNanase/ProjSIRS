@@ -58,8 +58,8 @@ const cipherFile = (key, srcPath, dstPath) => {
   const fileIv = forge.random.getBytesSync(IV_SIZE);
   const cipher = forge.cipher.createCipher(ALGORITHM, key);
   cipher.start({iv: fileIv});
-  cipher.update(forge.util.createBuffer(CANARY, 'binary'));
   cipher.update(forge.util.createBuffer(input, 'binary'));
+  cipher.update(forge.util.createBuffer(CANARY, 'binary'));
   cipher.finish();
   const output = forge.util.createBuffer();
   output.putBuffer(cipher.output);
@@ -78,24 +78,26 @@ const cipherFile = (key, srcPath, dstPath) => {
 const decipherFile = (key, srcPath, dstPath) => {
   const fileBuffer = fs.readFileSync(srcPath);
   // Slice the iv and the ciphered file.
-  const cipheredFileBuffer = fileBuffer.slice(2 * CANARY_SIZE, fileBuffer.length - IV_SIZE);
+  const cipheredFileBuffer = fileBuffer.slice(0, fileBuffer.length - IV_SIZE - (2*CANARY_SIZE));
   // console.log(cipheredFileBuffer.length);
-  const cipheredCanaryBuffer = fileBuffer.slice(0, 2 * CANARY_SIZE);
+  const cipheredCanaryBuffer = fileBuffer.slice(fileBuffer.length-IV_SIZE -(2*CANARY_SIZE), fileBuffer.length-IV_SIZE);
   const ivBuffer = fileBuffer.slice(fileBuffer.length - IV_SIZE);
   const fileIv = ivBuffer.toString('binary');
   const decipher = forge.cipher.createDecipher(ALGORITHM, key);
   decipher.start({iv: fileIv});
-  decipher.update(forge.util.createBuffer(cipheredCanaryBuffer.toString('binary'), 'binary'));
   decipher.update(forge.util.createBuffer(cipheredFileBuffer.toString('binary'), 'binary'));
+
+  decipher.update(forge.util.createBuffer(cipheredCanaryBuffer.toString('binary'), 'binary'));
   const result = decipher.finish();
   const buf = forge.util.createBuffer();
   buf.putBuffer(decipher.output);
   const data = buf.getBytes();
 
-  if (data.slice(0, CANARY_SIZE) !== CANARY) {
+  if (data.slice(data.length - CANARY_SIZE) !== CANARY) {
+  	console.log(data.slice(data.length - CANARY_SIZE));
     return false;
   } else {
-    fs.writeFileSync(dstPath, data.slice(CANARY_SIZE), {encoding: 'binary'});
+    fs.writeFileSync(dstPath, data.slice(0, data.length - CANARY_SIZE), {encoding: 'binary'});
     return result;
   }
 };
