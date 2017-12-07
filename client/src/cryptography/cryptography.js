@@ -78,21 +78,16 @@ const cipherFile = (key, srcPath, dstPath) => {
 const decipherFile = (key, srcPath, dstPath) => {
   const fileBuffer = fs.readFileSync(srcPath);
   // Slice the iv and the ciphered file.
-  const cipheredFileBuffer = fileBuffer.slice(0, fileBuffer.length - IV_SIZE - (2*CANARY_SIZE));
-  // console.log(cipheredFileBuffer.length);
-  const cipheredCanaryBuffer = fileBuffer.slice(fileBuffer.length-IV_SIZE -(2*CANARY_SIZE), fileBuffer.length-IV_SIZE);
+  const cipheredFileBuffer = fileBuffer.slice(0, fileBuffer.length - IV_SIZE);
   const ivBuffer = fileBuffer.slice(fileBuffer.length - IV_SIZE);
   const fileIv = ivBuffer.toString('binary');
   const decipher = forge.cipher.createDecipher(ALGORITHM, key);
   decipher.start({iv: fileIv});
   decipher.update(forge.util.createBuffer(cipheredFileBuffer.toString('binary'), 'binary'));
-
-  decipher.update(forge.util.createBuffer(cipheredCanaryBuffer.toString('binary'), 'binary'));
   const result = decipher.finish();
   const buf = forge.util.createBuffer();
   buf.putBuffer(decipher.output);
   const data = buf.getBytes();
-
   if (data.slice(data.length - CANARY_SIZE) !== CANARY) {
   	console.log(data.slice(data.length - CANARY_SIZE));
     return false;
