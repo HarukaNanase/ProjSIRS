@@ -1,3 +1,5 @@
+<img src="https://fenix.tecnico.ulisboa.pt/api/bennu-portal/configuration/logo" alt="IST Logo" title="IST Logo" align="right" height="40" />
+
 # CipherBox - G26
 
 CipherBox is a document sharing platform focused on absolute privacy and nearly-complete detachment from server logic, with some compromises to keep usability.
